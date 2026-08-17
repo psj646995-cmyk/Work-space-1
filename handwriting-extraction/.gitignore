@@ -1,4 +1,5 @@
 input_pdfs/*.pdf
-output/*.csv
+output/*.jsonl
+output/*.html
 output/*.log
 __pycache__/

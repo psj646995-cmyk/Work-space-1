@@ -3,17 +3,18 @@
 후원 아동 감사레터(PDF) 손글씨 자동 전사 스크립트.
 
 Claude Code CLI(`claude -p`)를 구독 계정으로 호출해 PDF에 담긴 손글씨를
-텍스트로 옮기고, 판독 신뢰도와 내용 정책(부적절한 요청 등) 플래그를 함께
-매겨 output/results.csv 에 누적 저장한다.
+텍스트로 옮기고, 판독 신뢰도·언어·내용 정책(부적절한 요청 등) 플래그를
+함께 매겨 output/results.html 리포트로 정리한다.
 
 사용법:
     1) input_pdfs/ 폴더에 PDF 파일들을 넣는다.
     2) `claude` CLI가 설치되어 있고 로그인되어 있는지 확인한다.
     3) python3 extract.py 실행. 사용량 한도에 걸려 중단되면,
        나중에 다시 python3 extract.py 를 실행하면 이어서 처리된다.
+    4) output/results.html 을 브라우저로 열어서 확인한다.
 """
 
-import csv
+import html
 import json
 import re
 import subprocess
@@ -25,7 +26,9 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 INPUT_DIR = BASE_DIR / "input_pdfs"
-OUTPUT_CSV = BASE_DIR / "output" / "results.csv"
+OUTPUT_DIR = BASE_DIR / "output"
+RESULTS_JSONL = OUTPUT_DIR / "results.jsonl"   # 처리 결과 원본 (재개 판단 기준)
+RESULTS_HTML = OUTPUT_DIR / "results.html"     # 사람이 보는 최종 리포트
 
 BATCH_SIZE = 8              # 한 번의 claude 호출에 묶어서 보낼 PDF 개수
 CONFIDENCE_THRESHOLD = 90   # 이 값 미만이면 needs_review = TRUE
@@ -35,22 +38,26 @@ DELAY_BETWEEN_CALLS = 3     # 호출 사이 대기 시간(초)
 # 예: "이 편지들은 초등학생 나이의 아동이 쓴 것으로, 철자 실수가 흔하다."
 DOMAIN_HINT = ""
 
-CSV_FIELDS = ["filename", "extracted_text", "confidence", "needs_review", "flagged", "flag_reason"]
+RESULT_FIELDS = ["filename", "extracted_text", "confidence", "needs_review", "language", "flagged", "flag_reason"]
 
 # ---- 프롬프트 --------------------------------------------------------------
 
 def build_prompt(pdf_paths):
     file_list = "\n".join(f"- {p}" for p in pdf_paths)
     hint = f"\n참고 사항: {DOMAIN_HINT}\n" if DOMAIN_HINT else ""
-    return f"""다음은 후원 아동이 후원자에게 쓴 영어 손글씨 감사레터 PDF 파일들이다.
-아래 각 파일을 Read 툴로 읽고 다음 세 가지를 수행하라.
+    return f"""다음은 후원 아동이 후원자에게 쓴 손글씨 감사레터 PDF 파일들이다.
+편지는 영어로 쓰여 있을 수도 있고, 아동의 현지어(예: Chichewa 등)로 쓰여
+있을 수도 있다. 아래 각 파일을 Read 툴로 읽고 다음 네 가지를 수행하라.
 
-1. 손글씨를 최대한 정확하게 영어 텍스트로 옮겨라. 철자나 문법을 임의로
-   교정하지 말고 쓰여진 그대로 옮겨라. 판독이 어려운 단어는 최선의
-   추측값을 적어라.
-2. 전체 판독에 대한 신뢰도를 0~100 사이의 정수로 매겨라(글씨가 깨끗하고
-   확신이 높으면 높은 점수, 흐리거나 판독이 애매하면 낮은 점수).
-3. 편지 내용에 다음과 같이 감사레터에 부적절한 내용이 있는지 판단하라:
+1. 손글씨를 쓰여진 언어 그대로, 최대한 정확하게 텍스트로 옮겨라(번역하지
+   말 것). 철자나 문법을 임의로 교정하지 말고 쓰여진 그대로 옮겨라.
+   판독이 어려운 단어는 최선의 추측값을 적어라.
+2. 편지에 주로 사용된 언어를 짧게 적어라 (예: "English", "Chichewa",
+   "Mixed" 등).
+3. 전체 판독에 대한 신뢰도를 0~100 사이의 정수로 매겨라(글씨가 깨끗하고
+   확신이 높으면 높은 점수, 흐리거나 판독이 애매하거나 익숙하지 않은
+   언어라 확신이 낮으면 낮은 점수).
+4. 편지 내용에 다음과 같이 감사레터에 부적절한 내용이 있는지 판단하라:
    금전이나 선물을 직접 요청하는 내용, 전화번호·이메일·SNS 계정·집주소 등
    개인연락처를 교환하자는 요청, 만남이나 방문 약속을 요청하는 내용, 그 외
    위험하거나 부적절해 보이는 내용. 해당 사항이 있으면 flagged를 true로
@@ -61,7 +68,7 @@ def build_prompt(pdf_paths):
 {file_list}
 
 다른 설명이나 코드블록 없이, 아래 형식의 JSON 배열만 출력하라:
-[{{"filename": "파일명.pdf", "text": "옮긴 텍스트", "confidence": 0-100, "flagged": true/false, "flag_reason": "사유 또는 빈 문자열"}}]
+[{{"filename": "파일명.pdf", "text": "옮긴 텍스트", "language": "언어", "confidence": 0-100, "flagged": true/false, "flag_reason": "사유 또는 빈 문자열"}}]
 """
 
 
@@ -103,25 +110,226 @@ def extract_json_array(text: str):
     raise ValueError("응답에서 JSON 배열을 찾지 못했습니다.")
 
 
-# ---- CSV 입출력 --------------------------------------------------------
+# ---- 결과 저장(JSONL, 재개 판단용) -----------------------------------------
 
 def load_already_processed():
-    if not OUTPUT_CSV.exists():
+    if not RESULTS_JSONL.exists():
         return set()
-    with OUTPUT_CSV.open("r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-        return {row["filename"] for row in reader}
+    names = set()
+    with RESULTS_JSONL.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            names.add(json.loads(line)["filename"])
+    return names
 
 
-def append_rows(rows):
-    is_new = not OUTPUT_CSV.exists()
-    OUTPUT_CSV.parent.mkdir(parents=True, exist_ok=True)
-    with OUTPUT_CSV.open("a", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
-        if is_new:
-            writer.writeheader()
+def load_all_results():
+    if not RESULTS_JSONL.exists():
+        return []
+    entries = []
+    with RESULTS_JSONL.open("r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                entries.append(json.loads(line))
+    return entries
+
+
+def append_results(rows):
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    with RESULTS_JSONL.open("a", encoding="utf-8") as f:
         for row in rows:
-            writer.writerow(row)
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
+# ---- HTML 리포트 생성 --------------------------------------------------------
+
+PAGE_TEMPLATE = """<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<title>감사레터 추출 리포트</title>
+<style>
+  :root {
+    --bg: #eceee6;
+    --surface: #ffffff;
+    --surface-2: #f4f5ef;
+    --ink: #1e232a;
+    --ink-soft: #5c6470;
+    --hairline: #d8dbd0;
+    --accent: #2b4c7e;
+    --accent-soft: #dce6f2;
+    --good: #3f7d4b;
+    --good-soft: #e4efe4;
+    --warn: #a06a1c;
+    --warn-soft: #f3e6cd;
+    --bad: #a83a3a;
+    --bad-soft: #f5e1e1;
+    --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171c; --surface: #1b1f26; --surface-2: #20252d;
+      --ink: #e7e9ee; --ink-soft: #a7adb8; --hairline: #2c313b;
+      --accent: #8fb2e3; --accent-soft: #26364d;
+      --good: #6fbf7c; --good-soft: #1c2f22;
+      --warn: #d9a441; --warn-soft: #362b16;
+      --bad: #e08080; --bad-soft: #38201f;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .page { max-width: 840px; margin: 0 auto; padding: 56px 24px 96px; }
+  header.masthead { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-family: var(--serif); font-weight: 400; font-size: 34px; margin: 0; text-wrap: balance; }
+  .dek { font-size: 15px; color: var(--ink-soft); max-width: 62ch; margin: 4px 0 0; }
+  .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 4px; overflow: hidden; margin: 36px 0 44px; }
+  .stat { background: var(--surface); padding: 18px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .stat .n { font-family: var(--serif); font-size: 28px; font-variant-numeric: tabular-nums; }
+  .stat .n.good { color: var(--good); } .stat .n.warn { color: var(--warn); } .stat .n.bad { color: var(--bad); }
+  .stat .label { font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); }
+  .log { display: flex; flex-direction: column; }
+  .entry { padding: 28px 0; border-top: 1px solid var(--hairline); display: grid; grid-template-columns: 168px 1fr; gap: 24px; }
+  .entry:last-child { border-bottom: 1px solid var(--hairline); }
+  .entry-meta { display: flex; flex-direction: column; gap: 10px; }
+  .child-id { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); letter-spacing: 0.03em; word-break: break-all; }
+  .meter-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .meter-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-soft); }
+  .meter-value { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+  .meter { height: 5px; border-radius: 3px; background: var(--surface-2); border: 1px solid var(--hairline); overflow: hidden; }
+  .meter > span { display: block; height: 100%; border-radius: 3px; }
+  .meter > span.good { background: var(--good); } .meter > span.warn { background: var(--warn); } .meter > span.bad { background: var(--bad); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 11px; letter-spacing: 0.02em; padding: 3px 8px; border-radius: 100px; white-space: nowrap; }
+  .chip.clear { background: var(--good-soft); color: var(--good); }
+  .chip.review { background: var(--warn-soft); color: var(--warn); }
+  .chip.flagged { background: var(--bad-soft); color: var(--bad); }
+  .chip.lang { background: var(--accent-soft); color: var(--accent); }
+  .entry-body { min-width: 0; }
+  .transcript { font-family: var(--serif); font-size: 16.5px; line-height: 1.65; max-width: 64ch; white-space: pre-line; }
+  .review-note { margin-top: 12px; font-size: 13px; color: var(--ink-soft); border-left: 2px solid var(--warn); padding-left: 10px; }
+  .flag-note { margin-top: 12px; font-size: 13px; color: var(--bad); border-left: 2px solid var(--bad); padding-left: 10px; }
+  footer.colophon { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--hairline); font-size: 12.5px; color: var(--ink-soft); }
+  @media (max-width: 620px) { .entry { grid-template-columns: 1fr; } .summary { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="masthead">
+    <span class="eyebrow">__COUNT__건 처리됨</span>
+    <h1>감사레터 추출 리포트</h1>
+    <p class="dek">extract.py가 자동 생성한 리포트입니다. 확인필요 또는 플래그 항목을 우선 검토하세요.</p>
+  </header>
+  <section class="summary">
+    <div class="stat"><span class="n">__COUNT__</span><span class="label">처리된 레터</span></div>
+    <div class="stat"><span class="n good">__PASS_COUNT__</span><span class="label">신뢰도 __THRESHOLD__%+ (통과)</span></div>
+    <div class="stat"><span class="n warn">__REVIEW_COUNT__</span><span class="label">확인필요</span></div>
+    <div class="stat"><span class="n bad">__FLAG_COUNT__</span><span class="label">내용 플래그</span></div>
+  </section>
+  <div class="log">
+__ENTRIES__
+  </div>
+  <footer class="colophon">
+    <span>내용 플래그 기준: 금전·선물 직접 요청 / 개인연락처 교환 요청 / 만남·방문 약속 요청 / 기타 부적절한 내용. 이 판정은 참고용 스크리닝이며 최종 확인은 사람이 진행해야 합니다.</span>
+  </footer>
+</div>
+</body>
+</html>
+"""
+
+ENTRY_TEMPLATE = """    <article class="entry">
+      <div class="entry-meta">
+        <span class="child-id">__FILENAME__</span>
+        <div class="meter-wrap">
+          <div class="meter-label"><span>신뢰도</span><span class="meter-value">__CONFIDENCE__%</span></div>
+          <div class="meter"><span class="__METER_CLASS__" style="width:__CONFIDENCE__%"></span></div>
+        </div>
+        <div class="chips">
+          __REVIEW_CHIP__
+          __FLAG_CHIP__
+          __LANG_CHIP__
+        </div>
+      </div>
+      <div class="entry-body">
+        <p class="transcript">__TEXT__</p>__NOTES__
+      </div>
+    </article>"""
+
+
+def meter_class(confidence):
+    if confidence >= CONFIDENCE_THRESHOLD:
+        return "good"
+    if confidence >= 70:
+        return "warn"
+    return "bad"
+
+
+def render_entry(item):
+    confidence = item.get("confidence", 0)
+    needs_review = item.get("needs_review", confidence < CONFIDENCE_THRESHOLD)
+    flagged = item.get("flagged", False)
+    language = (item.get("language") or "").strip()
+
+    review_chip = (
+        '<span class="chip review">확인필요</span>' if needs_review
+        else '<span class="chip clear">통과</span>'
+    )
+    flag_chip = (
+        '<span class="chip flagged">내용 플래그</span>' if flagged
+        else '<span class="chip clear">내용 이상없음</span>'
+    )
+    lang_chip = ""
+    if language and language.lower() not in ("english", "en", ""):
+        lang_chip = f'<span class="chip lang">{html.escape(language)}</span>'
+
+    notes = ""
+    if needs_review:
+        notes += f'\n        <p class="review-note">신뢰도 {confidence}%로 낮게 판정되었습니다. 원문과 대조 확인을 권장합니다.</p>'
+    if flagged and item.get("flag_reason"):
+        notes += f'\n        <p class="flag-note">플래그 사유: {html.escape(item["flag_reason"])}</p>'
+
+    entry_html = ENTRY_TEMPLATE
+    entry_html = entry_html.replace("__FILENAME__", html.escape(item.get("filename", "")))
+    entry_html = entry_html.replace("__CONFIDENCE__", str(confidence))
+    entry_html = entry_html.replace("__METER_CLASS__", meter_class(confidence))
+    entry_html = entry_html.replace("__REVIEW_CHIP__", review_chip)
+    entry_html = entry_html.replace("__FLAG_CHIP__", flag_chip)
+    entry_html = entry_html.replace("__LANG_CHIP__", lang_chip)
+    entry_html = entry_html.replace("__TEXT__", html.escape(item.get("extracted_text", "")))
+    entry_html = entry_html.replace("__NOTES__", notes)
+    return entry_html
+
+
+def generate_html():
+    entries = load_all_results()
+    # 플래그 -> 확인필요 -> 나머지 순으로 정렬해 우선순위가 높은 항목이 위로 오게 한다.
+    entries.sort(key=lambda e: (
+        not e.get("flagged", False),
+        not e.get("needs_review", e.get("confidence", 0) < CONFIDENCE_THRESHOLD),
+        e.get("filename", ""),
+    ))
+
+    pass_count = sum(1 for e in entries if not e.get("needs_review", e.get("confidence", 0) < CONFIDENCE_THRESHOLD))
+    review_count = sum(1 for e in entries if e.get("needs_review", e.get("confidence", 0) < CONFIDENCE_THRESHOLD))
+    flag_count = sum(1 for e in entries if e.get("flagged", False))
+
+    entries_html = "\n".join(render_entry(e) for e in entries) if entries else "    <p>아직 처리된 레터가 없습니다.</p>"
+
+    page = PAGE_TEMPLATE
+    page = page.replace("__COUNT__", str(len(entries)))
+    page = page.replace("__PASS_COUNT__", str(pass_count))
+    page = page.replace("__REVIEW_COUNT__", str(review_count))
+    page = page.replace("__FLAG_COUNT__", str(flag_count))
+    page = page.replace("__THRESHOLD__", str(CONFIDENCE_THRESHOLD))
+    page = page.replace("__ENTRIES__", entries_html)
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    RESULTS_HTML.write_text(page, encoding="utf-8")
 
 
 # ---- 메인 로직 --------------------------------------------------------
@@ -148,6 +356,8 @@ def main():
 
     if not remaining:
         print("남은 파일이 없습니다. 모두 처리 완료.")
+        generate_html()
+        print(f"결과 리포트: {RESULTS_HTML}")
         return
 
     processed_this_run = 0
@@ -190,6 +400,7 @@ def main():
                 "extracted_text": item.get("text", ""),
                 "confidence": confidence,
                 "needs_review": needs_review,
+                "language": item.get("language", ""),
                 "flagged": flagged,
                 "flag_reason": item.get("flag_reason", ""),
             })
@@ -200,7 +411,8 @@ def main():
         for name in missing:
             print(f"경고: 응답에 '{name}' 결과가 없습니다. 다음 실행 시 다시 시도됩니다.")
 
-        append_rows(rows)
+        append_results(rows)
+        generate_html()
         time.sleep(DELAY_BETWEEN_CALLS)
 
     total_remaining_after = len(remaining) - processed_this_run
@@ -209,7 +421,7 @@ def main():
     print(f"남은 건수: {max(total_remaining_after, 0)}")
     print(f"확인필요(신뢰도 {CONFIDENCE_THRESHOLD}% 미만): {needs_review_count}")
     print(f"플래그(내용 우려): {flagged_count}")
-    print(f"결과 파일: {OUTPUT_CSV}")
+    print(f"결과 리포트: {RESULTS_HTML}")
 
 
 if __name__ == "__main__":
