@@ -6,14 +6,19 @@ Claude Code CLI(`claude -p`)를 구독 계정으로 호출해 PDF에 담긴 손�
 텍스트로 옮기고, 판독 신뢰도·언어·내용 정책(부적절한 요청 등) 플래그를
 함께 매겨 output/results.html 리포트로 정리한다.
 
-사용법:
+사용법 (Windows는 실행하기.bat 더블클릭으로 대체 가능):
     1) input_pdfs/ 폴더에 PDF 파일들을 넣는다.
     2) `claude` CLI가 설치되어 있고 로그인되어 있는지 확인한다.
-    3) python3 extract.py 실행. 사용량 한도에 걸려 중단되면,
-       나중에 다시 python3 extract.py 를 실행하면 이어서 처리된다.
+    3) python3 extract.py 실행.
     4) output/results.html 을 브라우저로 열어서 확인한다.
+
+사용량 한도(5시간/주간)에 걸리면 스크립트를 종료하지 않고, 한도가
+초기화될 것으로 보이는 시각까지 자동으로 대기했다가 스스로 재시도한다.
+그냥 창을 열어둔 채로 두면 된다. (도중에 그만두고 싶으면 창을 닫거나
+Ctrl+C를 누르면 되고, 나중에 다시 실행해도 이어서 처리된다.)
 """
 
+import datetime
 import html
 import json
 import re
@@ -33,6 +38,12 @@ RESULTS_HTML = OUTPUT_DIR / "results.html"     # 사람이 보는 최종 리포�
 BATCH_SIZE = 8              # 한 번의 claude 호출에 묶어서 보낼 PDF 개수
 CONFIDENCE_THRESHOLD = 90   # 이 값 미만이면 needs_review = TRUE
 DELAY_BETWEEN_CALLS = 3     # 호출 사이 대기 시간(초)
+
+# 사용량 한도 오류 메시지에서 정확한 재개 시각을 못 찾았을 때 기본으로
+# 기다리는 시간(초). 그 시간이 지나면 자동으로 다시 시도한다.
+DEFAULT_RETRY_WAIT_SECONDS = 30 * 60
+# 대기하는 동안 "아직 살아있다"는 메시지를 몇 초마다 찍을지
+HEARTBEAT_INTERVAL_SECONDS = 10 * 60
 
 # 편지 내용의 특성을 안다면 여기에 한 줄 힌트를 추가하면 판독 정확도가 올라간다.
 # 예: "이 편지들은 초등학생 나이의 아동이 쓴 것으로, 철자 실수가 흔하다."
@@ -94,6 +105,61 @@ def call_claude(prompt: str) -> str:
         return envelope.get("result", result.stdout)
     except json.JSONDecodeError:
         return result.stdout
+
+
+def parse_retry_wait_seconds(message: str) -> int:
+    """사용량 한도 오류 메시지에서 '언제 다시 시도해야 하는지' 최대한 추측한다.
+    정확한 시각을 못 찾으면 DEFAULT_RETRY_WAIT_SECONDS를 반환한다.
+    (claude CLI 버전에 따라 오류 문구가 다를 수 있어 최선을 다한 추정치다.)
+    """
+    now = time.time()
+
+    # 1) 10~13자리 유닉스 타임스탬프(초 또는 밀리초)
+    m = re.search(r"\b(\d{10,13})\b", message)
+    if m:
+        ts = int(m.group(1))
+        if ts > 10 ** 12:
+            ts //= 1000
+        if ts > now:
+            return int(ts - now) + 30
+
+    # 2) "in N hour(s)" / "in N minute(s)"
+    m = re.search(r"in\s+(\d+)\s*hour", message, re.IGNORECASE)
+    if m:
+        return int(m.group(1)) * 3600 + 60
+    m = re.search(r"in\s+(\d+)\s*minute", message, re.IGNORECASE)
+    if m:
+        return int(m.group(1)) * 60 + 30
+
+    # 3) "HH:MM" 형태의 다음 재개 시각
+    m = re.search(r"\b(\d{1,2}):(\d{2})\s*(am|pm)?\b", message, re.IGNORECASE)
+    if m:
+        hour = int(m.group(1))
+        minute = int(m.group(2))
+        ampm = (m.group(3) or "").lower()
+        if ampm == "pm" and hour != 12:
+            hour += 12
+        if ampm == "am" and hour == 12:
+            hour = 0
+        if 0 <= hour <= 23:
+            now_dt = datetime.datetime.now()
+            target = now_dt.replace(hour=hour, minute=minute, second=0, microsecond=0)
+            if target <= now_dt:
+                target += datetime.timedelta(days=1)
+            return int((target - now_dt).total_seconds()) + 30
+
+    return DEFAULT_RETRY_WAIT_SECONDS
+
+
+def sleep_with_heartbeat(total_seconds: int):
+    """대기하는 동안 주기적으로 진행 상황을 출력해 '멈춘 게 아니다'를 알려준다."""
+    remaining = total_seconds
+    while remaining > 0:
+        step = min(HEARTBEAT_INTERVAL_SECONDS, remaining)
+        time.sleep(step)
+        remaining -= step
+        if remaining > 0:
+            print(f"  ...아직 대기 중입니다 (남은 시간 약 {max(remaining // 60, 1)}분). 창을 그대로 두시면 자동으로 재시도합니다.")
 
 
 def extract_json_array(text: str):
@@ -370,16 +436,26 @@ def main():
 
         print(f"\n배치 처리 중 ({len(batch_names)}개): {', '.join(batch_names)}")
 
-        try:
-            raw_response = call_claude(prompt)
-            items = extract_json_array(raw_response)
-        except Exception as exc:
-            message = str(exc).lower()
-            if any(marker in message for marker in USAGE_LIMIT_MARKERS):
-                print(f"사용량 한도에 도달한 것으로 보입니다: {exc}")
-                print("여기까지 결과는 저장되었습니다. 한도가 초기화된 뒤 다시 실행하면 이어서 처리됩니다.")
+        items = None
+        while True:
+            try:
+                raw_response = call_claude(prompt)
+                items = extract_json_array(raw_response)
                 break
-            print(f"이 배치 처리 중 오류 발생, 다음 배치로 넘어갑니다: {exc}")
+            except Exception as exc:
+                message = str(exc).lower()
+                if any(marker in message for marker in USAGE_LIMIT_MARKERS):
+                    wait_seconds = parse_retry_wait_seconds(str(exc))
+                    resume_at = datetime.datetime.now() + datetime.timedelta(seconds=wait_seconds)
+                    print("사용량 한도에 도달했습니다. 여기까지 결과는 이미 저장되어 있습니다.")
+                    print(f"{resume_at.strftime('%H:%M:%S')}쯤 자동으로 다시 시도합니다 (약 {max(wait_seconds // 60, 1)}분 대기). 창은 그대로 두세요.")
+                    sleep_with_heartbeat(wait_seconds)
+                    print("대기 시간이 끝나 다시 시도합니다...")
+                    continue
+                print(f"이 배치 처리 중 오류 발생, 다음 배치로 넘어갑니다: {exc}")
+                break
+
+        if items is None:
             continue
 
         rows = []
@@ -425,4 +501,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n중단했습니다. 지금까지 처리된 결과는 저장되어 있으니, 나중에 다시 실행하면 이어서 처리됩니다.")
