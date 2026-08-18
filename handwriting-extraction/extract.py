@@ -18,10 +18,12 @@ Claude Code CLI(`claude -p`)를 구독 계정으로 호출해 PDF·JPG·PNG에 �
 Ctrl+C를 누르면 되고, 나중에 다시 실행해도 이어서 처리된다.)
 """
 
+import csv
 import datetime
 import html
 import json
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -34,6 +36,7 @@ INPUT_DIR = BASE_DIR / "input_pdfs"
 OUTPUT_DIR = BASE_DIR / "output"
 RESULTS_JSONL = OUTPUT_DIR / "results.jsonl"   # 처리 결과 원본 (재개 판단 기준)
 RESULTS_HTML = OUTPUT_DIR / "results.html"     # 사람이 보는 최종 리포트
+RESULTS_CSV = OUTPUT_DIR / "results.csv"       # 메모장/엑셀에 복사·붙여넣기용
 
 # input_pdfs/ 안에서 이 확장자들을 찾는다 (대소문자 구분 없이)
 INPUT_EXTENSIONS = (".pdf", ".jpg", ".jpeg", ".png")
@@ -91,11 +94,22 @@ def build_prompt(file_paths):
 
 USAGE_LIMIT_MARKERS = ("usage limit", "rate limit", "quota", "5-hour limit", "weekly limit")
 
+# Windows에서 claude는 대개 claude.cmd / claude.ps1 형태로 설치되는데,
+# subprocess는 (cmd 창과 달리) PATHEXT를 자동으로 찾아주지 않아 "claude"만
+# 넘기면 [WinError 2] 파일을 찾을 수 없다는 오류가 난다. shutil.which로
+# 실제 실행 파일 경로를 미리 찾아 그 경로를 그대로 사용한다.
+CLAUDE_CMD = shutil.which("claude")
+
 
 def call_claude(prompt: str) -> str:
     """claude -p 를 호출하고 최종 텍스트 응답을 반환한다."""
+    if not CLAUDE_CMD:
+        raise RuntimeError(
+            "claude CLI를 찾을 수 없습니다. 명령 프롬프트에서 'claude --version'이 "
+            "정상적으로 실행되는지 먼저 확인해주세요."
+        )
     result = subprocess.run(
-        ["claude", "-p", prompt, "--output-format", "json"],
+        [CLAUDE_CMD, "-p", prompt, "--output-format", "json"],
         capture_output=True,
         text=True,
         cwd=str(BASE_DIR),
@@ -402,6 +416,20 @@ def generate_html():
     RESULTS_HTML.write_text(page, encoding="utf-8")
 
 
+def generate_csv():
+    """메모장/엑셀에 바로 복사·붙여넣기 하기 좋은 CSV도 함께 만든다."""
+    entries = load_all_results()
+    entries.sort(key=lambda e: e.get("filename", ""))
+
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    # utf-8-sig: 엑셀에서 열었을 때 한글/특수문자가 깨지지 않도록 BOM을 붙인다.
+    with RESULTS_CSV.open("w", encoding="utf-8-sig", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=RESULT_FIELDS, extrasaction="ignore")
+        writer.writeheader()
+        for e in entries:
+            writer.writerow(e)
+
+
 # ---- 메인 로직 --------------------------------------------------------
 
 def chunk(items, size):
@@ -410,6 +438,12 @@ def chunk(items, size):
 
 
 def main():
+    if not CLAUDE_CMD:
+        print("claude CLI를 찾을 수 없습니다.")
+        print("명령 프롬프트를 새로 열어 'claude --version'을 입력했을 때 정상적으로")
+        print("버전이 나오는지 확인한 뒤 다시 실행해주세요. (claude 설치/로그인이 필요합니다)")
+        sys.exit(1)
+
     if not INPUT_DIR.exists():
         print(f"입력 폴더가 없습니다: {INPUT_DIR}")
         sys.exit(1)
@@ -431,7 +465,9 @@ def main():
     if not remaining:
         print("남은 파일이 없습니다. 모두 처리 완료.")
         generate_html()
+        generate_csv()
         print(f"결과 리포트: {RESULTS_HTML}")
+        print(f"복사·붙여넣기용 CSV: {RESULTS_CSV}")
         return
 
     processed_this_run = 0
@@ -497,6 +533,7 @@ def main():
 
         append_results(rows)
         generate_html()
+        generate_csv()
         time.sleep(DELAY_BETWEEN_CALLS)
 
     total_remaining_after = len(remaining) - processed_this_run
@@ -506,6 +543,7 @@ def main():
     print(f"확인필요(신뢰도 {CONFIDENCE_THRESHOLD}% 미만): {needs_review_count}")
     print(f"플래그(내용 우려): {flagged_count}")
     print(f"결과 리포트: {RESULTS_HTML}")
+    print(f"복사·붙여넣기용 CSV: {RESULTS_CSV}")
 
 
 if __name__ == "__main__":

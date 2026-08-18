@@ -7,5 +7,6 @@ input_pdfs/*.JPEG
 input_pdfs/*.PNG
 output/*.jsonl
 output/*.html
+output/*.csv
 output/*.log
 __pycache__/
