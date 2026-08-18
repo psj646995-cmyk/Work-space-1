@@ -37,6 +37,7 @@ OUTPUT_DIR = BASE_DIR / "output"
 RESULTS_JSONL = OUTPUT_DIR / "results.jsonl"   # 처리 결과 원본 (재개 판단 기준)
 RESULTS_HTML = OUTPUT_DIR / "results.html"     # 사람이 보는 최종 리포트
 RESULTS_CSV = OUTPUT_DIR / "results.csv"       # 메모장/엑셀에 복사·붙여넣기용
+DEBUG_LOG = OUTPUT_DIR / "debug_last_batch.txt"  # 문제 생기면 확인용 (가장 최근 배치의 원본 응답)
 
 # input_pdfs/ 안에서 이 확장자들을 찾는다 (대소문자 구분 없이)
 INPUT_EXTENSIONS = (".pdf", ".jpg", ".jpeg", ".png")
@@ -82,11 +83,16 @@ def build_prompt(file_paths):
    하고 flag_reason에 한 문장으로 사유를 적어라. 없으면 flagged는 false,
    flag_reason은 빈 문자열로 하라.
 {hint}
-대상 파일 (파일명은 정확히 아래에 적힌 그대로 사용하라):
+대상 파일:
 {file_list}
 
+결과 JSON의 "filename"에는 위 목록의 폴더 경로(input_pdfs/)는 빼고
+파일 이름만 정확히 적어라. 예를 들어 위 목록에 "input_pdfs/example.jpg"가
+있다면 filename은 "input_pdfs/example.jpg"가 아니라 "example.jpg"로 적어라.
+목록에 있는 파일 개수만큼 빠짐없이 결과를 포함하라.
+
 다른 설명이나 코드블록 없이, 아래 형식의 JSON 배열만 출력하라:
-[{{"filename": "파일명", "text": "옮긴 텍스트", "language": "언어", "confidence": 0-100, "flagged": true/false, "flag_reason": "사유 또는 빈 문자열"}}]
+[{{"filename": "example.jpg", "text": "옮긴 텍스트", "language": "언어", "confidence": 0-100, "flagged": true/false, "flag_reason": "사유 또는 빈 문자열"}}]
 """
 
 
@@ -192,6 +198,12 @@ def extract_json_array(text: str):
         return json.loads(match.group(0))
 
     raise ValueError("응답에서 JSON 배열을 찾지 못했습니다.")
+
+
+def normalize_filename(raw: str) -> str:
+    """Claude가 filename을 'input_pdfs/x.jpg'나 전체 경로로 돌려줘도
+    맨 끝 파일 이름만 남기고 잘라내, 원래 파일명과 안정적으로 매칭한다."""
+    return raw.replace("\\", "/").rsplit("/", 1)[-1].strip()
 
 
 # ---- 결과 저장(JSONL, 재개 판단용) -----------------------------------------
@@ -502,10 +514,20 @@ def main():
         if items is None:
             continue
 
+        # 문제 생겼을 때 확인할 수 있게 이번 배치의 원본 응답을 남겨둔다.
+        try:
+            DEBUG_LOG.parent.mkdir(parents=True, exist_ok=True)
+            DEBUG_LOG.write_text(
+                f"배치 파일: {batch_names}\n\n원본 응답:\n{raw_response}",
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+
         rows = []
         returned_filenames = set()
         for item in items:
-            filename = item.get("filename", "")
+            filename = normalize_filename(item.get("filename", ""))
             confidence = item.get("confidence", 0)
             flagged = bool(item.get("flagged", False))
             needs_review = confidence < CONFIDENCE_THRESHOLD

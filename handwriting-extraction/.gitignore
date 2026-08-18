@@ -9,4 +9,5 @@ output/*.jsonl
 output/*.html
 output/*.csv
 output/*.log
+output/debug_last_batch.txt
 __pycache__/
