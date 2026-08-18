@@ -1,4 +1,10 @@
 input_pdfs/*.pdf
+input_pdfs/*.jpg
+input_pdfs/*.jpeg
+input_pdfs/*.png
+input_pdfs/*.JPG
+input_pdfs/*.JPEG
+input_pdfs/*.PNG
 output/*.jsonl
 output/*.html
 output/*.log

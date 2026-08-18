@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-후원 아동 감사레터(PDF) 손글씨 자동 전사 스크립트.
+후원 아동 감사레터(PDF 또는 사진/스캔 이미지) 손글씨 자동 전사 스크립트.
 
-Claude Code CLI(`claude -p`)를 구독 계정으로 호출해 PDF에 담긴 손글씨를
-텍스트로 옮기고, 판독 신뢰도·언어·내용 정책(부적절한 요청 등) 플래그를
-함께 매겨 output/results.html 리포트로 정리한다.
+Claude Code CLI(`claude -p`)를 구독 계정으로 호출해 PDF·JPG·PNG에 담긴
+손글씨를 텍스트로 옮기고, 판독 신뢰도·언어·내용 정책(부적절한 요청 등)
+플래그를 함께 매겨 output/results.html 리포트로 정리한다.
 
 사용법 (Windows는 실행하기.bat 더블클릭으로 대체 가능):
-    1) input_pdfs/ 폴더에 PDF 파일들을 넣는다.
+    1) input_pdfs/ 폴더에 PDF 또는 JPG/JPEG/PNG 파일들을 넣는다.
     2) `claude` CLI가 설치되어 있고 로그인되어 있는지 확인한다.
     3) python3 extract.py 실행.
     4) output/results.html 을 브라우저로 열어서 확인한다.
@@ -35,7 +35,10 @@ OUTPUT_DIR = BASE_DIR / "output"
 RESULTS_JSONL = OUTPUT_DIR / "results.jsonl"   # 처리 결과 원본 (재개 판단 기준)
 RESULTS_HTML = OUTPUT_DIR / "results.html"     # 사람이 보는 최종 리포트
 
-BATCH_SIZE = 8              # 한 번의 claude 호출에 묶어서 보낼 PDF 개수
+# input_pdfs/ 안에서 이 확장자들을 찾는다 (대소문자 구분 없이)
+INPUT_EXTENSIONS = (".pdf", ".jpg", ".jpeg", ".png")
+
+BATCH_SIZE = 8              # 한 번의 claude 호출에 묶어서 보낼 파일 개수
 CONFIDENCE_THRESHOLD = 90   # 이 값 미만이면 needs_review = TRUE
 DELAY_BETWEEN_CALLS = 3     # 호출 사이 대기 시간(초)
 
@@ -53,12 +56,13 @@ RESULT_FIELDS = ["filename", "extracted_text", "confidence", "needs_review", "la
 
 # ---- 프롬프트 --------------------------------------------------------------
 
-def build_prompt(pdf_paths):
-    file_list = "\n".join(f"- {p}" for p in pdf_paths)
+def build_prompt(file_paths):
+    file_list = "\n".join(f"- {p}" for p in file_paths)
     hint = f"\n참고 사항: {DOMAIN_HINT}\n" if DOMAIN_HINT else ""
-    return f"""다음은 후원 아동이 후원자에게 쓴 손글씨 감사레터 PDF 파일들이다.
-편지는 영어로 쓰여 있을 수도 있고, 아동의 현지어(예: Chichewa 등)로 쓰여
-있을 수도 있다. 아래 각 파일을 Read 툴로 읽고 다음 네 가지를 수행하라.
+    return f"""다음은 후원 아동이 후원자에게 쓴 손글씨 감사레터를 스캔하거나
+촬영한 파일들이다(PDF 또는 JPG/PNG 이미지). 편지는 영어로 쓰여 있을
+수도 있고, 아동의 현지어(예: Chichewa 등)로 쓰여 있을 수도 있다. 아래
+각 파일을 Read 툴로 읽고 다음 네 가지를 수행하라.
 
 1. 손글씨를 쓰여진 언어 그대로, 최대한 정확하게 텍스트로 옮겨라(번역하지
    말 것). 철자나 문법을 임의로 교정하지 말고 쓰여진 그대로 옮겨라.
@@ -79,7 +83,7 @@ def build_prompt(pdf_paths):
 {file_list}
 
 다른 설명이나 코드블록 없이, 아래 형식의 JSON 배열만 출력하라:
-[{{"filename": "파일명.pdf", "text": "옮긴 텍스트", "language": "언어", "confidence": 0-100, "flagged": true/false, "flag_reason": "사유 또는 빈 문자열"}}]
+[{{"filename": "파일명", "text": "옮긴 텍스트", "language": "언어", "confidence": 0-100, "flagged": true/false, "flag_reason": "사유 또는 빈 문자열"}}]
 """
 
 
@@ -410,15 +414,19 @@ def main():
         print(f"입력 폴더가 없습니다: {INPUT_DIR}")
         sys.exit(1)
 
-    all_pdfs = sorted(p.name for p in INPUT_DIR.glob("*.pdf"))
-    if not all_pdfs:
-        print(f"{INPUT_DIR} 안에 PDF 파일이 없습니다. 먼저 파일을 넣어주세요.")
+    all_files = sorted(
+        p.name for p in INPUT_DIR.iterdir()
+        if p.is_file() and p.suffix.lower() in INPUT_EXTENSIONS
+    )
+    if not all_files:
+        allowed = ", ".join(INPUT_EXTENSIONS)
+        print(f"{INPUT_DIR} 안에 처리할 파일이 없습니다 ({allowed} 중 하나여야 합니다). 먼저 파일을 넣어주세요.")
         sys.exit(1)
 
     done = load_already_processed()
-    remaining = [name for name in all_pdfs if name not in done]
+    remaining = [name for name in all_files if name not in done]
 
-    print(f"전체 PDF: {len(all_pdfs)}개 / 이미 처리됨: {len(done)}개 / 이번에 처리할 대상: {len(remaining)}개")
+    print(f"전체 파일: {len(all_files)}개 / 이미 처리됨: {len(done)}개 / 이번에 처리할 대상: {len(remaining)}개")
 
     if not remaining:
         print("남은 파일이 없습니다. 모두 처리 완료.")
