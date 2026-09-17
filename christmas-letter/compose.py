@@ -276,10 +276,20 @@ def find_asset(directory: Path, child_id: str) -> Path | None:
     if not directory.exists():
         return None
     target = normalize_id(child_id)
-    matches = [
+    # 정확히 일치하는 파일을 최우선으로 찾고("MWI0040001.jpg"), 없으면
+    # 파일명이 그 ID로 시작하는 파일도 허용한다("MWI0040001 ABGIRL
+    # MANDALIZA.jpg"처럼 ID 뒤에 이름이 붙어있는 실제 파일명 형식을 위함).
+    # 모든 ID가 "MWI"+7자리 숫자로 길이가 고정돼 있어 접두어 매칭으로 다른
+    # 아동과 혼동될 위험은 없다.
+    exact = [
         p for p in directory.iterdir()
         if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
         and normalize_id(p.stem) == target
+    ]
+    matches = exact or [
+        p for p in directory.iterdir()
+        if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
+        and normalize_id(p.stem).startswith(target)
     ]
     if not matches:
         return None
@@ -468,14 +478,39 @@ th {{ background: #f2f2f2; }}
 
 # ---- 대량 처리 --------------------------------------------------------
 
-def run_batch():
-    if not LETTERS_XLSX.exists():
-        print(f"{LETTERS_XLSX.name}이(가) 없습니다. christmas-letter 폴더에 "
-              f"편지 문구 엑셀을 '{LETTERS_XLSX.name}' 이름으로 넣어주세요.")
+def find_letters_file() -> Path:
+    """LETTERS_XLSX("letters.xlsx")가 있으면 그걸 쓰고, 없으면 이 폴더 안의
+    .xlsx 파일을 자동으로 찾는다. 사용자가 letters.xlsx로 이름을 바꾸지
+    않고 원래 파일명 그대로 넣어도 동작하게 하기 위함."""
+    if LETTERS_XLSX.exists():
+        return LETTERS_XLSX
+
+    candidates = [
+        p for p in BASE_DIR.glob("*.xlsx")
+        if not p.name.startswith("~$")  # 엑셀이 열려있을 때 생기는 잠금 임시파일 제외
+    ]
+    if len(candidates) == 1:
+        print(f"'{LETTERS_XLSX.name}' 파일은 없지만 '{candidates[0].name}'을(를) "
+              f"편지 문구 엑셀로 사용합니다.")
+        return candidates[0]
+    if len(candidates) > 1:
+        names = ", ".join(p.name for p in candidates)
+        print(f"christmas-letter 폴더에 엑셀 파일이 여러 개 있어 어떤 걸 써야 할지 "
+              f"알 수 없습니다: {names}")
+        print(f"사용할 파일 하나만 남기고 나머지를 지우거나, 그 파일 이름을 "
+              f"'{LETTERS_XLSX.name}'로 바꿔주세요.")
         sys.exit(1)
 
+    print(f"{LETTERS_XLSX.name}이(가) 없습니다. christmas-letter 폴더에 "
+          f"편지 문구 엑셀 파일(.xlsx)을 넣어주세요.")
+    sys.exit(1)
+
+
+def run_batch():
+    letters_path = find_letters_file()
+
     try:
-        letters = load_letters(LETTERS_XLSX)
+        letters = load_letters(letters_path)
     except RuntimeError as exc:
         print(str(exc))
         sys.exit(1)
