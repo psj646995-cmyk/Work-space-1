@@ -52,12 +52,16 @@ HANDWRITING_FONT_NAME = "PatrickHand"
 
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
 
-# 편지 문구 엑셀의 실제 컬럼명이 다르면 여기만 바꾸면 된다 (대소문자/앞뒤
-# 공백은 자동으로 무시하고 비교한다).
+# 편지 문구 엑셀의 실제 컬럼명 후보들. 각 항목마다 여러 후보를 적어두면 그 중
+# 하나라도 일치하는 헤더를 사용한다(대소문자/앞뒤 공백은 자동 무시). "name"은
+# 사진·그림 파일명과 매칭하는 데도 쓰이므로 영어 이름 컬럼을 우선순위 앞쪽에
+# 둔다. "letter" 후보가 하나도 안 맞으면, 헤더가 비어있으면서 실제 편지
+# 내용이 들어있는 첫 번째 열을 자동으로 편지 문구 열로 인식한다(엑셀에 편지
+# 문구 열 제목이 없는 경우를 위한 안전장치).
 COLUMN_MAP = {
-    "id": "Child's ID",
-    "name": "Child's Name",
-    "letter": "Letter",
+    "id": ["아동Id(Child Code)", "Child's ID", "ID", "번호"],
+    "name": ["아동명(Child Name(ENG))", "Child's Name", "Name", "이름"],
+    "letter": ["Letter", "편지", "편지 내용", "편지문구"],
 }
 
 RASTER_DPI = 250        # 최종 JPG 해상도 (인쇄에도 충분한 수준)
@@ -280,9 +284,21 @@ def find_asset(directory: Path, name: str) -> Path | None:
 
 # ---- 엑셀 읽기 --------------------------------------------------------
 
+def _column_letter(idx: int) -> str:
+    """0-based 열 인덱스를 엑셀 열 문자로 바꾼다 (0->A, 4->E ...)."""
+    letters = ""
+    n = idx + 1
+    while n:
+        n, rem = divmod(n - 1, 26)
+        letters = chr(65 + rem) + letters
+    return letters
+
+
 def load_letters(xlsx_path: Path) -> dict:
     """엑셀을 읽어 {정규화된 이름: {"id":.., "name":.., "letter":..}} 딕셔너리로
-    반환한다. 컬럼명이 COLUMN_MAP과 다르면 실제 헤더 목록을 담은 오류를 낸다."""
+    반환한다. COLUMN_MAP의 후보 헤더 중 하나라도 일치하면 그 열을 쓴다.
+    "letter" 열은 후보로 못 찾으면, 헤더가 비어있으면서 첫 데이터 행에 실제
+    글자가 들어있는 첫 번째 열을 자동으로 편지 문구 열로 인식한다."""
     try:
         wb = load_workbook(xlsx_path, data_only=True, read_only=True)
     except PermissionError:
@@ -298,18 +314,39 @@ def load_letters(xlsx_path: Path) -> dict:
     headers = [str(h).strip() if h is not None else "" for h in header_row]
     header_lookup = {h.casefold(): i for i, h in enumerate(headers) if h}
 
+    first_data_row = next(sheet.iter_rows(min_row=2, max_row=2, values_only=True), None) or ()
+
     col_index = {}
-    missing_cols = []
-    for key, wanted_header in COLUMN_MAP.items():
-        idx = header_lookup.get(wanted_header.strip().casefold())
+    missing_keys = []
+    for key, candidates in COLUMN_MAP.items():
+        idx = None
+        for candidate in candidates:
+            idx = header_lookup.get(candidate.strip().casefold())
+            if idx is not None:
+                break
+        if idx is None and key == "letter":
+            # 헤더가 비어있는 열 중, 첫 데이터 행에 실제 글자(10자 이상)가
+            # 들어있는 첫 번째 열을 편지 문구 열로 추정한다.
+            for i, h in enumerate(headers):
+                if h:
+                    continue
+                value = first_data_row[i] if i < len(first_data_row) else None
+                if value is not None and len(str(value).strip()) >= 10:
+                    idx = i
+                    print(f"  편지 문구 열 제목이 비어있어 {_column_letter(i)}열을 "
+                          f"편지 문구 열로 자동 인식했습니다.")
+                    break
         if idx is None:
-            missing_cols.append(wanted_header)
+            missing_keys.append(key)
         else:
             col_index[key] = idx
 
-    if missing_cols:
+    if missing_keys:
+        missing_desc = ", ".join(
+            f"{key}({'/'.join(COLUMN_MAP[key])})" for key in missing_keys
+        )
         raise RuntimeError(
-            f"{xlsx_path.name}에서 다음 컬럼을 찾을 수 없습니다: {', '.join(missing_cols)}\n"
+            f"{xlsx_path.name}에서 다음 컬럼을 찾을 수 없습니다: {missing_desc}\n"
             f"  실제 엑셀의 헤더: {', '.join(h for h in headers if h)}\n"
             f"  compose.py 상단의 COLUMN_MAP 값을 실제 헤더명에 맞게 고쳐주세요."
         )
