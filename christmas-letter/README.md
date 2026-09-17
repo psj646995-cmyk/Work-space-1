@@ -22,8 +22,8 @@ pip install -r requirements.txt
 christmas-letter/
 ├── 실행하기.bat          # (Windows) 더블클릭으로 바로 실행
 ├── template/template.pdf # 편지지 템플릿 (이미 준비되어 있음, 건드릴 필요 없음)
-├── photos/                # 여기에 아동 사진을 넣으세요 ("이름.jpg")
-├── drawings/               # 여기에 아동 그림을 넣으세요 ("이름.jpg")
+├── photos/                # 여기에 아동 사진을 넣으세요 ("아동ID.jpg")
+├── drawings/               # 여기에 아동 그림을 넣으세요 ("아동ID.jpg")
 ├── letters.xlsx            # 편지 문구 엑셀 (번호/이름/편지 문구)
 ├── output/
 │   ├── ID_이름.jpg          # 완성된 편지 이미지
@@ -50,10 +50,12 @@ christmas-letter/
 
 ### 2) 사진·그림 넣기: `photos/`, `drawings/`
 
-`photos/`, `drawings/` 폴더에 **엑셀의 이름 열과 똑같은 파일명**으로 사진과
-그림을 넣으세요. 예: 이름이 "Alesi Yokonia"라면 `photos/Alesi Yokonia.jpg`,
-`drawings/Alesi Yokonia.jpg`. 앞뒤 공백이나 대소문자 차이는 자동으로
-무시하고 매칭합니다. jpg/jpeg/png 모두 지원합니다.
+`photos/`, `drawings/` 폴더에 **엑셀의 아동 ID(번호)와 똑같은 파일명**으로
+사진과 그림을 넣으세요. 예: ID가 "MWI0040003"이라면 `photos/MWI0040003.jpg`,
+`drawings/MWI0040003.jpg`. 공백·하이픈·대소문자 차이는 자동으로 무시하고
+매칭하므로 "MWI 0040003.jpg", "mwi-0040003.jpg"처럼 써도 됩니다. jpg/jpeg/png
+모두 지원합니다. (이름은 사람마다 철자/띄어쓰기가 달라질 수 있어 매칭 기준으로
+쓰지 않습니다. 카드에 인쇄되는 이름은 엑셀의 이름 열 값을 그대로 사용합니다.)
 
 ### 3) 실행하기
 
@@ -77,7 +79,7 @@ christmas-letter/
 전체를 돌리기 전에 한 명만 만들어서 배치를 확인하고 싶다면:
 ```
 python3 compose.py --single --id "MWI 0040003" --name "ALESI YOKONIA" \
-  --photo photos/Alesi Yokonia.jpg --drawing drawings/Alesi Yokonia.jpg \
+  --photo photos/MWI0040003.jpg --drawing drawings/MWI0040003.jpg \
   --letter "Dear Sponsor,\nThank you for your support.\nMerry Christmas~" \
   --out output/test.jpg
 ```
@@ -92,6 +94,9 @@ python3 compose.py --single --id "MWI 0040003" --name "ALESI YOKONIA" \
   실행하면 나는 오류입니다. 엑셀에서 파일을 닫고 다시 실행해주세요.
 - 특정 아동만 사진이 이상하거나 처리가 안 되면 `mismatch_report.html`에
   사유가 함께 표시됩니다. 해당 사진/그림 파일을 확인한 뒤 다시 실행하세요.
+- **매칭이 0건이거나 이상하게 적으면** — 실행 중 콘솔에 photos/drawings에서
+  실제로 찾은 파일 개수와, 엑셀 ID 예시/실제 파일명 예시가 함께 출력됩니다.
+  파일명이 아동 ID와 정확히 같은지(확장자 제외) 비교해보세요.
 
 ## 설정 조정
 

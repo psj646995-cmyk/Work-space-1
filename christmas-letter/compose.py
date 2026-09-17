@@ -9,8 +9,8 @@
 
 사용법 (Windows는 실행하기.bat 더블클릭으로 대체 가능):
     1) 대량 처리:
-       - photos/, drawings/ 폴더에 엑셀의 이름과 같은 파일명으로 사진·그림을
-         넣는다 (예: 이름이 "Alesi Yokonia"면 photos/Alesi Yokonia.jpg).
+       - photos/, drawings/ 폴더에 엑셀의 아동 ID와 같은 파일명으로 사진·그림을
+         넣는다 (예: ID가 "MWI0040001"이면 photos/MWI0040001.jpg).
        - letters.xlsx에 번호(ID)/이름/편지 문구 3열을 채운다.
        - `python3 compose.py` 실행.
        - 결과는 output/ID_이름.jpg 로 저장되고, output/mismatch_report.html
@@ -258,28 +258,45 @@ def normalize_name(name) -> str:
     return re.sub(r"\s+", " ", str(name).strip()).casefold()
 
 
+def normalize_id(child_id) -> str:
+    """아동 ID 비교용 정규화. "MWI 0040001", "MWI-0040001", "mwi0040001"처럼
+    공백/하이픈/언더스코어 유무나 대소문자가 다르게 표기돼도 같은 ID로
+    취급하도록 그런 문자를 전부 제거하고 대문자로 통일한다."""
+    return re.sub(r"[\s_\-]+", "", str(child_id).strip()).upper()
+
+
 def safe_filename_part(text: str) -> str:
     """ID/이름을 출력 파일명에 안전하게 쓰기 위해 경로 구분자 등을 제거."""
     return re.sub(r'[\\/:*?"<>|]', "", str(text).strip()) or "unknown"
 
 
-def find_asset(directory: Path, name: str) -> Path | None:
-    """directory 안에서 정규화한 이름이 일치하는 이미지 파일을 찾는다.
+def find_asset(directory: Path, child_id: str) -> Path | None:
+    """directory 안에서 정규화한 아동 ID가 일치하는 이미지 파일을 찾는다.
     여러 개가 일치하면 첫 번째를 쓰고 경고를 출력한다."""
     if not directory.exists():
         return None
-    target = normalize_name(name)
+    target = normalize_id(child_id)
     matches = [
         p for p in directory.iterdir()
         if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
-        and normalize_name(p.stem) == target
+        and normalize_id(p.stem) == target
     ]
     if not matches:
         return None
     if len(matches) > 1:
-        print(f"  경고: '{name}' 이름으로 파일이 {len(matches)}개 일치합니다 "
+        print(f"  경고: ID '{child_id}'로 파일이 {len(matches)}개 일치합니다 "
               f"({', '.join(p.name for p in matches)}). 첫 번째 파일을 사용합니다.")
     return matches[0]
+
+
+def list_asset_filenames(directory: Path, limit: int = 5) -> list:
+    if not directory.exists():
+        return []
+    names = sorted(
+        p.name for p in directory.iterdir()
+        if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
+    )
+    return names[:limit]
 
 
 # ---- 엑셀 읽기 --------------------------------------------------------
@@ -352,7 +369,8 @@ def load_letters(xlsx_path: Path) -> dict:
         )
 
     letters = {}
-    duplicate_names = []
+    duplicate_ids = []
+    skipped_no_id = 0
     for row in sheet.iter_rows(min_row=2, values_only=True):
         if row is None or all(v is None for v in row):
             continue
@@ -360,19 +378,24 @@ def load_letters(xlsx_path: Path) -> dict:
         if name is None or str(name).strip() == "":
             continue
         child_id = row[col_index["id"]]
+        if child_id is None or str(child_id).strip() == "":
+            skipped_no_id += 1
+            continue
         letter_text = row[col_index["letter"]]
-        key = normalize_name(name)
+        key = normalize_id(child_id)
         if key in letters:
-            duplicate_names.append(str(name).strip())
+            duplicate_ids.append(str(child_id).strip())
         letters[key] = {
-            "id": "" if child_id is None else str(child_id).strip(),
+            "id": str(child_id).strip(),
             "name": str(name).strip(),
             "letter": "" if letter_text is None else str(letter_text).strip(),
         }
 
-    if duplicate_names:
-        print(f"경고: 엑셀에 이름이 중복된 행이 있습니다 (나중 행으로 덮어씀): "
-              f"{', '.join(duplicate_names)}")
+    if duplicate_ids:
+        print(f"경고: 엑셀에 ID가 중복된 행이 있습니다 (나중 행으로 덮어씀): "
+              f"{', '.join(duplicate_ids)}")
+    if skipped_no_id:
+        print(f"경고: ID가 비어있는 행 {skipped_no_id}개는 건너뛰었습니다.")
 
     wb.close()
     return letters
@@ -381,15 +404,15 @@ def load_letters(xlsx_path: Path) -> dict:
 # ---- 매칭 --------------------------------------------------------
 
 def match_children(letters: dict):
-    """엑셀의 각 아동에 대해 사진/그림 파일을 찾아 매칭한다.
+    """엑셀의 각 아동에 대해 아동 ID로 사진/그림 파일을 찾아 매칭한다.
     matched: 사진+그림 모두 찾은 아동 목록
     missing: 사진 또는 그림이 없는 아동 목록 (이유 포함)
     """
     matched = []
     missing = []
     for key, rec in letters.items():
-        photo_path = find_asset(PHOTOS_DIR, rec["name"])
-        drawing_path = find_asset(DRAWINGS_DIR, rec["name"])
+        photo_path = find_asset(PHOTOS_DIR, rec["id"])
+        drawing_path = find_asset(DRAWINGS_DIR, rec["id"])
         reasons = []
         if photo_path is None:
             reasons.append("사진 없음")
@@ -461,9 +484,24 @@ def run_batch():
         print("엑셀에서 처리할 아동을 찾지 못했습니다 (이름 열이 모두 비어있음).")
         sys.exit(1)
 
+    photo_files = list_asset_filenames(PHOTOS_DIR, limit=10**9)
+    drawing_files = list_asset_filenames(DRAWINGS_DIR, limit=10**9)
+    print(f"photos 폴더에서 찾은 이미지 파일: {len(photo_files)}개 / "
+          f"drawings 폴더에서 찾은 이미지 파일: {len(drawing_files)}개")
+
     matched, missing = match_children(letters)
     print(f"엑셀 아동 수: {len(letters)}개 / 사진·그림 모두 매칭됨: {len(matched)}개 / "
           f"누락: {len(missing)}개")
+
+    if not matched and (photo_files or drawing_files):
+        sample_ids = [rec["id"] for rec in list(letters.values())[:5]]
+        print("  매칭이 하나도 안 됐습니다 — 파일명이 아동 ID와 다른 것 같습니다. 비교해보세요:")
+        print(f"    엑셀 ID 예시:        {', '.join(sample_ids)}")
+        print(f"    photos 파일명 예시:   {', '.join(photo_files[:5]) or '(없음)'}")
+        print(f"    drawings 파일명 예시: {', '.join(drawing_files[:5]) or '(없음)'}")
+        print("    파일명이 아동 ID(확장자 제외)와 일치해야 합니다. 예: ID가 "
+              f"'{sample_ids[0] if sample_ids else 'MWI0040001'}'이면 "
+              f"photos/{sample_ids[0] if sample_ids else 'MWI0040001'}.jpg")
 
     processed = 0
     skipped = 0
