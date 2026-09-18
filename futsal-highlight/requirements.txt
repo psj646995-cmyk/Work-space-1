@@ -1,0 +1,6 @@
+numpy
+opencv-python-headless
+librosa
+soundfile
+pydantic>=2
+pytest
