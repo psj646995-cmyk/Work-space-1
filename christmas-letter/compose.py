@@ -270,7 +270,7 @@ def safe_filename_part(text: str) -> str:
     return re.sub(r'[\\/:*?"<>|]', "", str(text).strip()) or "unknown"
 
 
-def find_asset(directory: Path, child_id: str) -> Path | None:
+def find_asset_by_id(directory: Path, child_id: str) -> Path | None:
     """directory 안에서 정규화한 아동 ID가 일치하는 이미지 파일을 찾는다.
     여러 개가 일치하면 첫 번째를 쓰고 경고를 출력한다."""
     if not directory.exists():
@@ -295,6 +295,41 @@ def find_asset(directory: Path, child_id: str) -> Path | None:
         return None
     if len(matches) > 1:
         print(f"  경고: ID '{child_id}'로 파일이 {len(matches)}개 일치합니다 "
+              f"({', '.join(p.name for p in matches)}). 첫 번째 파일을 사용합니다.")
+    return matches[0]
+
+
+def _word_tokens(s) -> list:
+    """문자/숫자가 아닌 문자를 기준으로 토큰화 (파일명·이름 비교용)."""
+    return [t.lower() for t in re.split(r"[^0-9A-Za-z]+", str(s)) if t]
+
+
+def _tokens_contain_subsequence(haystack: list, needle: list) -> bool:
+    if not needle:
+        return False
+    n = len(needle)
+    return any(haystack[i:i + n] == needle for i in range(len(haystack) - n + 1))
+
+
+def find_asset_by_name(directory: Path, child_name: str) -> Path | None:
+    """ID로 못 찾았을 때 쓰는 폴백. 파일명 토큰 안에 아동 이름의 토큰들이
+    순서대로(붙어서) 들어있는 파일을 찾는다 — ID 부분에 오타가 있어도
+    ("MWI00040332 HOSSEA JONAS.jpg") 이름이 맞으면 잡아낸다. 부분 단어
+    일치가 아니라 단어 단위로 비교해서 엉뚱한 아동과 혼동될 위험을 줄인다."""
+    if not directory.exists():
+        return None
+    name_tokens = _word_tokens(child_name)
+    if not name_tokens:
+        return None
+    matches = [
+        p for p in directory.iterdir()
+        if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
+        and _tokens_contain_subsequence(_word_tokens(p.stem), name_tokens)
+    ]
+    if not matches:
+        return None
+    if len(matches) > 1:
+        print(f"  경고: 이름 '{child_name}'(으)로 파일이 {len(matches)}개 일치합니다 "
               f"({', '.join(p.name for p in matches)}). 첫 번째 파일을 사용합니다.")
     return matches[0]
 
@@ -415,14 +450,40 @@ def load_letters(xlsx_path: Path) -> dict:
 
 def match_children(letters: dict):
     """엑셀의 각 아동에 대해 아동 ID로 사진/그림 파일을 찾아 매칭한다.
+    ID로 못 찾으면(파일명의 ID 부분에 오타가 있는 경우 등) 파일명 안의
+    이름으로 다시 찾아본다 — 어느 쪽으로 찾았든, 편지지에 쓰이는 ID/이름은
+    항상 엑셀 값을 쓰므로 파일명의 오타가 결과물에 영향을 주지 않는다.
+
     matched: 사진+그림 모두 찾은 아동 목록
     missing: 사진 또는 그림이 없는 아동 목록 (이유 포함)
+    name_fallback: ID로는 못 찾고 이름으로 찾은 항목 기록 (감사용 — 파일명의
+    ID 오타를 사용자가 나중에 알 수 있도록 리포트에 남긴다)
     """
     matched = []
     missing = []
+    name_fallback = []
+
     for key, rec in letters.items():
-        photo_path = find_asset(PHOTOS_DIR, rec["id"])
-        drawing_path = find_asset(DRAWINGS_DIR, rec["id"])
+        photo_path = find_asset_by_id(PHOTOS_DIR, rec["id"])
+        photo_via_name = False
+        if photo_path is None:
+            photo_path = find_asset_by_name(PHOTOS_DIR, rec["name"])
+            photo_via_name = photo_path is not None
+
+        drawing_path = find_asset_by_id(DRAWINGS_DIR, rec["id"])
+        drawing_via_name = False
+        if drawing_path is None:
+            drawing_path = find_asset_by_name(DRAWINGS_DIR, rec["name"])
+            drawing_via_name = drawing_path is not None
+
+        if photo_via_name or drawing_via_name:
+            via = []
+            if photo_via_name:
+                via.append(f"사진: {photo_path.name}")
+            if drawing_via_name:
+                via.append(f"그림: {drawing_path.name}")
+            name_fallback.append({**rec, "via": via})
+
         reasons = []
         if photo_path is None:
             reasons.append("사진 없음")
@@ -434,12 +495,12 @@ def match_children(letters: dict):
             missing.append({**rec, "reasons": reasons})
         else:
             matched.append({**rec, "photo_path": photo_path, "drawing_path": drawing_path})
-    return matched, missing
+    return matched, missing, name_fallback
 
 
 # ---- 리포트 --------------------------------------------------------
 
-def write_mismatch_report(missing: list, processing_warnings: list):
+def write_mismatch_report(missing: list, processing_warnings: list, name_fallback: list):
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     rows = []
     for m in missing:
@@ -455,6 +516,13 @@ def write_mismatch_report(missing: list, processing_warnings: list):
             f"<td>{html.escape(w['name'])}</td>"
             f"<td>{html.escape(w['reason'])}</td></tr>"
         )
+    fallback_rows = []
+    for f in name_fallback:
+        fallback_rows.append(
+            f"<tr><td>{html.escape(f.get('id',''))}</td>"
+            f"<td>{html.escape(f['name'])}</td>"
+            f"<td>{html.escape(', '.join(f['via']))}</td></tr>"
+        )
     page = f"""<!doctype html>
 <html lang="ko"><head><meta charset="utf-8"><title>크리스마스 편지 처리 결과</title>
 <style>
@@ -467,6 +535,10 @@ th {{ background: #f2f2f2; }}
 <h1>누락된 자료 (사진/그림/편지 문구가 없어 건너뛴 아동)</h1>
 <table><tr><th>ID</th><th>이름</th><th>사유</th></tr>
 {''.join(rows) if rows else '<tr><td colspan="3">없음</td></tr>'}
+</table>
+<h1>ID 대신 이름으로 찾은 아동 (파일명의 ID 부분에 오타가 있을 수 있음)</h1>
+<table><tr><th>ID(엑셀 기준, 정상 인쇄됨)</th><th>이름</th><th>이름으로 찾은 파일</th></tr>
+{''.join(fallback_rows) if fallback_rows else '<tr><td colspan="3">없음</td></tr>'}
 </table>
 <h1>생성 중 경고 (편지 문구가 넘쳐 글자를 줄인 경우 등)</h1>
 <table><tr><th>ID</th><th>이름</th><th>사유</th></tr>
@@ -524,9 +596,12 @@ def run_batch():
     print(f"photos 폴더에서 찾은 이미지 파일: {len(photo_files)}개 / "
           f"drawings 폴더에서 찾은 이미지 파일: {len(drawing_files)}개")
 
-    matched, missing = match_children(letters)
+    matched, missing, name_fallback = match_children(letters)
     print(f"엑셀 아동 수: {len(letters)}개 / 사진·그림 모두 매칭됨: {len(matched)}개 / "
           f"누락: {len(missing)}개")
+    if name_fallback:
+        print(f"  참고: {len(name_fallback)}명은 파일명의 ID로는 못 찾아서 이름으로 "
+              f"대신 찾았습니다 (파일명의 ID 오타로 보임 — mismatch_report.html에 목록 있음).")
 
     if not matched and (photo_files or drawing_files):
         sample_ids = [rec["id"] for rec in list(letters.values())[:5]]
@@ -567,7 +642,7 @@ def run_batch():
             })
             print(f"  경고: {rec['name']} 처리 중 오류, 건너뜁니다: {exc}")
 
-    write_mismatch_report(missing, processing_warnings)
+    write_mismatch_report(missing, processing_warnings, name_fallback)
 
     print("\n--- 처리 요약 ---")
     print(f"새로 생성: {processed}개")
