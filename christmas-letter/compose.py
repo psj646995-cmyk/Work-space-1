@@ -35,7 +35,7 @@ from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.utils import ImageReader
-from PIL import Image, ImageOps
+from PIL import Image, ImageOps, ImageFilter
 from openpyxl import load_workbook
 
 # ---- 설정값 (필요에 따라 조정) -------------------------------------------
@@ -89,6 +89,14 @@ LETTER_FONT_MIN_SIZE = 10
 LETTER_LEADING_RATIO = 1.45
 LETTER_TEXT_COLOR = (0.12, 0.16, 0.35)  # 진한 남색 (손글씨 잉크 느낌)
 
+# 그림 스캔본(A5 용지 등)의 흰 여백을 자동으로 잘라내는 설정. 그림이 실제
+# 용지보다 훨씬 작게 그려져 있으면 이 크롭이 그림을 훨씬 크게 보이게 해준다.
+AUTOCROP_DRAWINGS = True
+AUTOCROP_BACKGROUND_THRESHOLD = 235   # 밝기(0~255)가 이보다 밝으면 "여백"으로 간주
+AUTOCROP_PADDING_FRAC = 0.03          # 크롭 후 사방에 남기는 여유(원본 크기 대비 비율)
+AUTOCROP_BORDER_IGNORE_FRAC = 0.01    # 스캐너 가장자리 그림자/테두리 오탐 방지용으로 무시할 바깥쪽 폭
+AUTOCROP_MIN_KEEP_FRAC = 0.05         # 감지된 영역이 이보다 작으면(오탐 의심) 크롭하지 않고 원본 사용
+
 
 # ---- 좌표 변환 --------------------------------------------------------
 
@@ -116,6 +124,38 @@ def load_and_normalize_image(path: Path) -> Image.Image:
     if img.mode != "RGB":
         img = img.convert("RGB")
     return img
+
+
+def autocrop_scan(img: Image.Image) -> Image.Image:
+    """A5 등 스캔 용지의 흰 여백을 자동으로 잘라내고 실제 그림이 있는
+    영역만 남긴다. 여백이 거의 없거나(이미 크롭된 이미지) 감지에 실패하면
+    안전하게 원본을 그대로 반환한다."""
+    w, h = img.size
+    gray = img.convert("L").filter(ImageFilter.GaussianBlur(radius=2))
+
+    # 스캐너 가장자리의 그림자/검은 테두리 때문에 전체가 "그림"으로 오탐되는
+    # 것을 막기 위해, 가장 바깥쪽 얇은 테두리는 검사에서 제외한다.
+    bx = max(1, int(w * AUTOCROP_BORDER_IGNORE_FRAC))
+    by = max(1, int(h * AUTOCROP_BORDER_IGNORE_FRAC))
+    inner = gray.crop((bx, by, w - bx, h - by))
+
+    mask = inner.point(lambda p: 255 if p < AUTOCROP_BACKGROUND_THRESHOLD else 0)
+    bbox = mask.getbbox()
+    if bbox is None:
+        return img  # 여백만 있고 내용이 감지되지 않음 -> 원본 그대로
+
+    x0, y0, x1, y1 = bbox
+    pad_x = int(w * AUTOCROP_PADDING_FRAC)
+    pad_y = int(h * AUTOCROP_PADDING_FRAC)
+    x0 = max(0, x0 + bx - pad_x)
+    y0 = max(0, y0 + by - pad_y)
+    x1 = min(w, x1 + bx + pad_x)
+    y1 = min(h, y1 + by + pad_y)
+
+    if (x1 - x0) < w * AUTOCROP_MIN_KEEP_FRAC or (y1 - y0) < h * AUTOCROP_MIN_KEEP_FRAC:
+        return img  # 감지 영역이 비정상적으로 작음(오탐 의심) -> 원본 그대로
+
+    return img.crop((x0, y0, x1, y1))
 
 
 def place_image(c: canvas.Canvas, img: Image.Image, box, page_w, page_h):
@@ -232,6 +272,8 @@ def compose_one(child_id: str, child_name: str, letter_text: str,
     place_image(c, photo_img, LAYOUT["photo_box"], page_w, page_h)
 
     drawing_img = load_and_normalize_image(drawing_path)
+    if AUTOCROP_DRAWINGS:
+        drawing_img = autocrop_scan(drawing_img)
     place_image(c, drawing_img, LAYOUT["drawing_box"], page_w, page_h)
 
     overflow = wrap_and_fit_text(c, letter_text, LAYOUT["letter_box"], page_w, page_h)

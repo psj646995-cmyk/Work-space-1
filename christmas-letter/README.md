@@ -114,5 +114,10 @@ python3 compose.py --single --id "MWI 0040003" --name "ALESI YOKONIA" \
   ID·이름 글자 위치·크기
 - `RASTER_DPI`, `JPEG_QUALITY` — 결과 이미지 해상도/품질 (인쇄 품질을 더
   높이려면 `RASTER_DPI`를 300 이상으로 올리세요. 파일 용량이 커집니다.)
+- `AUTOCROP_DRAWINGS` — 그림 스캔본(A5 용지 등)에서 흰 여백을 자동으로
+  잘라내고 그림 부분만 확대해서 넣을지 여부 (기본 `True`). 어떤 그림에서
+  여백 감지가 이상하게 되면 `AUTOCROP_BACKGROUND_THRESHOLD`(밝기 기준값,
+  낮출수록 더 어두운 부분까지 "여백"으로 봄)를 조정하거나, 전체를 끄려면
+  `AUTOCROP_DRAWINGS = False`로 바꾸세요.
 - `LETTER_FONT_MAX_SIZE`/`LETTER_FONT_MIN_SIZE` — 편지 문구가 길 때 자동으로
   줄어드는 글자 크기 범위
