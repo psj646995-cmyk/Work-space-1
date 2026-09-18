@@ -270,9 +270,11 @@ def safe_filename_part(text: str) -> str:
     return re.sub(r'[\\/:*?"<>|]', "", str(text).strip()) or "unknown"
 
 
-def find_asset_by_id(directory: Path, child_id: str) -> Path | None:
+def find_asset_by_id(directory: Path, child_id: str, child_name: str = "") -> Path | None:
     """directory 안에서 정규화한 아동 ID가 일치하는 이미지 파일을 찾는다.
-    여러 개가 일치하면 첫 번째를 쓰고 경고를 출력한다."""
+    같은 ID로 여러 파일이 잡히면(파일 하나의 ID가 다른 아동과 겹치는 오타
+    등), 그 후보들 중 파일명에 이 아동의 이름(엑셀 기준)이 들어있는 파일을
+    우선으로 골라 애매함을 해소한다. 그래도 못 정하면 첫 번째를 쓰고 경고."""
     if not directory.exists():
         return None
     target = normalize_id(child_id)
@@ -294,8 +296,18 @@ def find_asset_by_id(directory: Path, child_id: str) -> Path | None:
     if not matches:
         return None
     if len(matches) > 1:
-        print(f"  경고: ID '{child_id}'로 파일이 {len(matches)}개 일치합니다 "
-              f"({', '.join(p.name for p in matches)}). 첫 번째 파일을 사용합니다.")
+        name_tokens = _word_tokens(child_name) if child_name else []
+        by_name = [
+            p for p in matches
+            if name_tokens and _tokens_contain_subsequence(_word_tokens(p.stem), name_tokens)
+        ]
+        if len(by_name) == 1:
+            return by_name[0]
+        matches = by_name if by_name else matches
+        if len(matches) > 1:
+            print(f"  경고: ID '{child_id}'로 파일이 {len(matches)}개 일치하고, "
+                  f"이름으로도 구분이 안 됩니다 ({', '.join(p.name for p in matches)}). "
+                  f"첫 번째 파일을 사용합니다.")
     return matches[0]
 
 
@@ -464,13 +476,13 @@ def match_children(letters: dict):
     name_fallback = []
 
     for key, rec in letters.items():
-        photo_path = find_asset_by_id(PHOTOS_DIR, rec["id"])
+        photo_path = find_asset_by_id(PHOTOS_DIR, rec["id"], rec["name"])
         photo_via_name = False
         if photo_path is None:
             photo_path = find_asset_by_name(PHOTOS_DIR, rec["name"])
             photo_via_name = photo_path is not None
 
-        drawing_path = find_asset_by_id(DRAWINGS_DIR, rec["id"])
+        drawing_path = find_asset_by_id(DRAWINGS_DIR, rec["id"], rec["name"])
         drawing_via_name = False
         if drawing_path is None:
             drawing_path = find_asset_by_name(DRAWINGS_DIR, rec["name"])
