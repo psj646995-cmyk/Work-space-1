@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
+from .progress import print_progress
 from .signal_utils import z_score_spikes
 from .spike_event import SpikeEvent
 
@@ -39,6 +40,8 @@ def detect_ball_positions(
 
     source_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     frame_interval = max(int(round(source_fps / sample_fps)), 1)
+    total_source_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    total_sampled = (total_source_frames // frame_interval) + 1 if total_source_frames > 0 else 0
 
     detections: list[BallDetection] = []
     frame_idx = 0
@@ -49,6 +52,7 @@ def detect_ball_positions(
             break
 
         if frame_idx % frame_interval == 0:
+            print_progress(len(detections) + 1, total_sampled, prefix="공 검출 중 ")
             height, width = frame.shape[:2]
             diagonal = float(np.hypot(width, height))
 
@@ -75,6 +79,7 @@ def detect_ball_positions(
         frame_idx += 1
 
     cap.release()
+    print()
     return detections
 
 

@@ -11,6 +11,7 @@ import cv2
 import numpy as np
 
 from highlight.object_detection import COCO_SPORTS_BALL_CLASS_ID
+from highlight.progress import print_progress
 
 COCO_PERSON_CLASS_ID = 0
 
@@ -39,6 +40,8 @@ def detect_frame_objects(
 
     source_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     frame_interval = max(int(round(source_fps / sample_fps)), 1)
+    total_source_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    total_sampled = (total_source_frames // frame_interval) + 1 if total_source_frames > 0 else 0
 
     results_list: list[FrameDetections] = []
     frame_idx = 0
@@ -49,6 +52,7 @@ def detect_frame_objects(
             break
 
         if frame_idx % frame_interval == 0:
+            print_progress(len(results_list) + 1, total_sampled, prefix="공/선수 검출 중 ")
             height, width = frame.shape[:2]
             diagonal = float(np.hypot(width, height))
 
@@ -81,4 +85,5 @@ def detect_frame_objects(
         frame_idx += 1
 
     cap.release()
+    print()
     return results_list
