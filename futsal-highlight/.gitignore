@@ -2,4 +2,11 @@ __pycache__/
 *.pyc
 .pytest_cache/
 highlights_out/
+analysis_out/
 *.pt
+
+# input_videos/, output/ 는 폴더 구조만 추적하고 실제 파일은 커밋하지 않음
+input_videos/*
+!input_videos/.gitkeep
+output/*
+!output/.gitkeep
