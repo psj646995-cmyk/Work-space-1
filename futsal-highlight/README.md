@@ -69,6 +69,17 @@ python run.py --mode highlight input_videos/경기영상.mp4 --output-dir output
 python run.py --mode analyze input_videos/경기영상.mp4 --output-dir output/analyze
 ```
 
+### 결과 영상이 재생/전송이 안 될 때
+
+만들어진 mp4가 "지원되지 않는 인코딩"이라고 뜨거나 메신저 전송 후 안 열리면:
+- 최신 코드는 `yuv420p` 픽셀 포맷 + `+faststart`(재생 앞부분부터 바로 열리게 하는 옵션)로
+  만들어서 대부분의 플레이어/메신저에서 열리도록 했다. 그래도 안 되면 VLC 같은
+  범용 플레이어로 먼저 열어보고, 그것도 안 되면 만드는 중 ffmpeg 오류가 없었는지
+  콘솔 로그를 확인해달라
+- 영상 자체가 너무 크면(수백 MB 이상) 메신저가 자체적으로 재압축하다 깨지는
+  경우도 있다 — 그럴 땐 파일 전송(카카오톡 "파일" 탭 등)이나 클라우드 링크로
+  공유하는 걸 권장한다
+
 ## 1. 하이라이트 모드 (`highlight/`)
 
 ### 어떻게 동작하는가
@@ -99,18 +110,20 @@ python run.py --mode analyze input_videos/경기영상.mp4 --output-dir output/a
 |---|---|
 | `--audio-z-threshold` / `--motion-z-threshold` / `--ball-z-threshold` | 값을 낮출수록 더 많은 후보를 잡지만 오탐도 늘어남 |
 | `--use-ball-detection` / `--no-use-ball-detection` | YOLO 공 검출 신호 사용 여부 (기본 켜짐, 모델 로딩 시간이 있어 끌 수도 있음) |
+| `--require-ball-speed` / `--no-require-ball-speed` | 공 속도 급증(강슛 후보) 신호가 있는 후보만 남길지 (기본 켜짐 — 단순 터치·함성·카메라 흔들림만으로는 하이라이트가 되지 않게 함) |
 | `--min-gap-sec` | 같은 장면이 여러 후보로 중복 검출되지 않게 하는 최소 간격 |
 | `--corroboration-window-sec` | 서로 다른 신호를 "같은 사건"으로 볼 시간 오차 허용 범위 |
 | `--min-confidence` | 이 값 미만인 후보는 버림 |
-| `--max-clips` | 신뢰도 상위 N개까지만 추출 |
+| `--max-clips` | 신뢰도 상위 N개까지만 추출 (기본 10 — 풀경기처럼 후보가 많이 잡히는 영상에서 하이라이트가 너무 길어지지 않게 함) |
 | `--pre-seconds` / `--post-seconds` | 후보 시점 앞/뒤로 몇 초씩 잘라낼지 |
 | `--no-combined` | 개별 클립만 만들고 하나로 이어붙인 영상은 생략 |
 | `--combined-name` | 이어붙인 영상 파일명 (기본 `highlights_combined.mp4`) |
 
 개별 클립을 모두 이어붙인 **`highlights_combined.mp4`**가 기본으로 함께 만들어진다.
 전체 길이는 찾은 후보 개수 x 클립 길이로 자연스럽게 정해지므로, 영상이 너무 짧거나
-길면 `--*-z-threshold`(후보 개수)나 `--pre-seconds`/`--post-seconds`(클립 길이)를
-조절하면 된다.
+길면 `--max-clips`(개수 상한)나 `--*-z-threshold`(민감도), `--pre-seconds`/`--post-seconds`
+(클립 길이)를 조절하면 된다. 후보가 아예 안 잡히면 `--no-require-ball-speed`로
+공 속도 조건을 풀거나 임계값들을 낮춰보자.
 
 ### 한계 (반드시 읽을 것)
 

@@ -3,6 +3,19 @@ import os
 import subprocess
 import tempfile
 
+# +faststart: moov atom을 파일 앞으로 옮겨서, 메신저 전송이나 스트리밍 재생 시
+# 일부 플레이어가 "지원되지 않는 형식"으로 잘못 인식하는 문제를 막는다.
+# yuv420p: 원본 영상의 픽셀 포맷이 흔치 않으면(예: 폰 카메라의 특수 색공간)
+# 일부 재생기가 거부할 수 있어 가장 널리 지원되는 포맷으로 강제 변환한다.
+_COMPAT_VIDEO_FLAGS = ["-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+
+
+def _run_ffmpeg(cmd: list[str]) -> None:
+    result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    if result.returncode != 0:
+        stderr_tail = result.stderr.decode("utf-8", errors="replace")[-2000:]
+        raise RuntimeError(f"ffmpeg 실행 실패 (명령: {' '.join(cmd)}):\n{stderr_tail}")
+
 
 def extract_clip(
     video_path: str,
@@ -26,11 +39,12 @@ def extract_clip(
         "libx264",
         "-preset",
         "veryfast",
+        *_COMPAT_VIDEO_FLAGS,
         "-c:a",
         "aac",
         output_path,
     ]
-    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    _run_ffmpeg(cmd)
 
 
 def concat_clips(clip_paths: list[str], output_path: str) -> None:
@@ -60,6 +74,8 @@ def concat_clips(clip_paths: list[str], output_path: str) -> None:
             list_path,
             "-c",
             "copy",
+            "-movflags",
+            "+faststart",
             output_path,
         ]
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        _run_ffmpeg(cmd)

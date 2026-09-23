@@ -113,7 +113,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--min-gap-sec", type=float, default=10.0, help="같은 장면이 중복 검출되지 않도록 하는 최소 간격")
     parser.add_argument("--corroboration-window-sec", type=float, default=4.0)
     parser.add_argument("--min-confidence", type=float, default=0.0, help="이 값 미만인 후보는 버림")
-    parser.add_argument("--max-clips", type=int, default=None, help="최대 몇 개 클립까지 추출할지")
+    parser.add_argument("--max-clips", type=int, default=10, help="최대 몇 개 클립까지 추출할지 (신뢰도 상위 N개, 기본 10)")
+    parser.add_argument(
+        "--require-ball-speed",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="공 속도 급증(강슛 후보) 신호가 근거에 포함된 후보만 하이라이트로 남길지 "
+        "(기본 켜짐 — 단순 터치/함성/카메라 흔들림만으로는 하이라이트가 되지 않게 함)",
+    )
     parser.add_argument(
         "--combined-name",
         default="highlights_combined.mp4",
@@ -143,6 +150,7 @@ def run(args: argparse.Namespace) -> list[HighlightCandidate]:
 
     signals = [("audio", audio_events), ("motion", motion_events)]
 
+    require_ball_speed = args.require_ball_speed
     if args.use_ball_detection:
         print("[3/4] YOLO로 공 검출 및 속도 분석 중 (모델 로딩 포함, 시간이 걸릴 수 있습니다)...")
         ball_events = detect_ball_speed_spikes(
@@ -152,16 +160,26 @@ def run(args: argparse.Namespace) -> list[HighlightCandidate]:
         signals.append(("ball_speed", ball_events))
     else:
         print("[3/4] 공 검출 건너뜀 (--no-use-ball-detection)")
+        if require_ball_speed:
+            print("      --require-ball-speed는 공 속도 신호가 있어야 의미가 있어 자동으로 껐습니다.")
+            require_ball_speed = False
 
     candidates = merge_events(signals, args.corroboration_window_sec)
     candidates = [c for c in candidates if c.confidence >= args.min_confidence]
+    if require_ball_speed:
+        before = len(candidates)
+        candidates = [c for c in candidates if "ball_speed" in c.sources]
+        print(f"      단순 터치/함성만 있는 후보 {before - len(candidates)}개 제외 (--require-ball-speed)")
     candidates.sort(key=lambda c: -c.confidence)
     if args.max_clips is not None:
         candidates = candidates[: args.max_clips]
     candidates.sort(key=lambda c: c.time_sec)
 
     if not candidates:
-        print("하이라이트 후보를 찾지 못했습니다. --audio-z-threshold / --motion-z-threshold / --ball-z-threshold 를 낮춰보세요.")
+        print(
+            "하이라이트 후보를 찾지 못했습니다. --audio-z-threshold / --motion-z-threshold / "
+            "--ball-z-threshold 를 낮추거나 --no-require-ball-speed 를 시도해보세요."
+        )
         return []
 
     print(f"[4/4] 후보 {len(candidates)}개 클립 추출 중...")
