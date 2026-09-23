@@ -38,8 +38,8 @@ futsal-highlight/
 ├── run.py               # (Mac/Linux/터미널) 두 모드를 고르는 진입점
 ├── input_videos/        # 여기에 분석할 영상 파일을 넣으세요
 ├── output/
-│   ├── highlight/       # 하이라이트 모드 결과 클립
-│   └── analyze/         # 경기 분석 모드 결과 (report.html 등)
+│   ├── highlight/       # highlights_combined.mp4(전체 이어붙인 영상) + 개별 클립
+│   └── analyze/         # analysis_highlights.mp4(요약 영상) + report.html + 이벤트별 클립/썸네일
 ├── highlight/            # 하이라이트 모드 코드
 ├── analysis/             # 경기 분석 모드 코드
 ├── rating/                # 평점/MOM 계산 코드
@@ -53,7 +53,9 @@ futsal-highlight/
 1. `input_videos` 폴더에 영상 파일(.mp4/.mov/.avi/.mkv)을 넣습니다
 2. **`실행하기.bat`을 더블클릭**합니다 (한글 파일명이 깨져서 안 보이면 대신 **`start.bat`**을 더블클릭하세요 — 내용은 완전히 같습니다)
 3. 나오는 메뉴에서 `1`(하이라이트) 또는 `2`(경기 분석)를 입력하고 엔터
-4. 끝나면 `output\highlight` 또는 `output\analyze` 폴더를 확인 (경기 분석은 `report.html`을 브라우저로 더블클릭해서 열어보세요)
+4. 끝나면 `output\highlight` 또는 `output\analyze` 폴더를 확인
+   - 하이라이트 모드: **`highlights_combined.mp4`** 하나가 전체 하이라이트를 이어붙인 영상 (개별 클립도 같이 저장됨)
+   - 경기 분석 모드: **`analysis_highlights.mp4`**가 이벤트 구간을 이어붙인 요약 영상, `report.html`은 브라우저로 열면 각 장면 설명과 참고용 득점확률을 볼 수 있는 문서
 
 ### Mac / Linux (터미널)
 
@@ -102,6 +104,13 @@ python run.py --mode analyze input_videos/경기영상.mp4 --output-dir output/a
 | `--min-confidence` | 이 값 미만인 후보는 버림 |
 | `--max-clips` | 신뢰도 상위 N개까지만 추출 |
 | `--pre-seconds` / `--post-seconds` | 후보 시점 앞/뒤로 몇 초씩 잘라낼지 |
+| `--no-combined` | 개별 클립만 만들고 하나로 이어붙인 영상은 생략 |
+| `--combined-name` | 이어붙인 영상 파일명 (기본 `highlights_combined.mp4`) |
+
+개별 클립을 모두 이어붙인 **`highlights_combined.mp4`**가 기본으로 함께 만들어진다.
+전체 길이는 찾은 후보 개수 x 클립 길이로 자연스럽게 정해지므로, 영상이 너무 짧거나
+길면 `--*-z-threshold`(후보 개수)나 `--pre-seconds`/`--post-seconds`(클립 길이)를
+조절하면 된다.
 
 ### 한계 (반드시 읽을 것)
 
@@ -132,8 +141,10 @@ python run.py --mode analyze input_videos/경기영상.mp4 --output-dir output/a
 2. **슈팅/강킥 후보**: 공의 속도가 로컬 평균 대비 급증하는 시점 (하이라이트
    모드의 공 속도 스파이크 로직을 그대로 재사용)
 
-각 이벤트 시점의 썸네일 프레임과 함께 **HTML 리포트**로 정리한다 (`report.py`).
-골대의 화면 좌표를 알려주면(`--goal-post-a`/`--goal-post-b`), 거리·각도 기반의
+각 이벤트마다 짧은 클립을 잘라 시간 순으로 이어붙인 **요약 영상**
+(`analysis_highlights.mp4`)과, 썸네일·설명·참고용 xG를 정리한 **HTML 리포트**
+(`report.html`)를 함께 만든다 (`video_builder.py`, `report.py`). 골대의 화면
+좌표를 알려주면(`--goal-post-a`/`--goal-post-b`), 거리·각도 기반의
 **참고용 득점확률(xG) 근사치**도 함께 표시한다.
 
 ### 세부 옵션
@@ -145,6 +156,13 @@ python run.py --mode analyze input_videos/경기영상.mp4 --output-dir output/a
 | `--shot-z-threshold` | 슈팅 후보로 볼 공 속도 급증 임계값 |
 | `--min-gap-sec` | 같은 이벤트가 중복 검출되지 않게 하는 최소 간격 |
 | `--goal-post-a "x,y"` / `--goal-post-b "x,y"` | 골대 양쪽 기둥의 화면 픽셀 좌표 (지정하면 참고용 xG 계산) |
+| `--event-pre-seconds` / `--event-post-seconds` | 이벤트 클립에서 시점 앞/뒤로 몇 초씩 담을지 (기본 4초씩) |
+| `--no-combined-video` | 요약 영상은 만들지 않고 HTML 리포트만 생성 |
+| `--combined-name` | 요약 영상 파일명 (기본 `analysis_highlights.mp4`) |
+
+요약 영상의 전체 길이는 탐지된 이벤트 개수 x 클립 길이로 정해진다. 이벤트가
+너무 적거나 많으면 `--touch-jump-ratio`/`--shot-z-threshold`(민감도)나
+`--event-pre-seconds`/`--event-post-seconds`(클립 길이)를 조절하면 된다.
 
 골대 좌표는 영상 아무 프레임이나 이미지 뷰어로 열어서, 골대 기둥이 화면에서
 몇 픽셀 지점인지 눈대중으로 읽으면 된다 (예: 왼쪽 기둥이 대략 (165, 650)).

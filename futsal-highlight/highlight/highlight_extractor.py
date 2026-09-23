@@ -12,13 +12,13 @@ ffmpeg로 하이라이트 클립을 잘라내는 CLI 도구.
 """
 import argparse
 import os
-import subprocess
 from dataclasses import dataclass, field
 
 from .audio_analysis import detect_audio_spikes, load_audio
 from .motion_analysis import detect_motion_spikes
 from .object_detection import detect_ball_speed_spikes
 from .spike_event import SpikeEvent
+from .video_utils import concat_clips, extract_clip
 
 # 단일 신호만 잡힌 후보는 여러 신호가 겹친 후보보다 신뢰도를 낮춘다.
 SINGLE_SIGNAL_CONFIDENCE_SCALE = 0.55
@@ -88,35 +88,6 @@ def merge_events(
     return candidates
 
 
-def extract_clip(
-    video_path: str,
-    center_time_sec: float,
-    pre_seconds: float,
-    post_seconds: float,
-    output_path: str,
-) -> None:
-    start = max(0.0, center_time_sec - pre_seconds)
-    duration = pre_seconds + post_seconds
-    cmd = [
-        "ffmpeg",
-        "-y",
-        "-ss",
-        f"{start:.2f}",
-        "-i",
-        video_path,
-        "-t",
-        f"{duration:.2f}",
-        "-c:v",
-        "libx264",
-        "-preset",
-        "veryfast",
-        "-c:a",
-        "aac",
-        output_path,
-    ]
-    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-
 def format_timestamp(seconds: float) -> str:
     minutes, secs = divmod(int(seconds), 60)
     return f"{minutes:02d}:{secs:02d}"
@@ -143,6 +114,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--corroboration-window-sec", type=float, default=4.0)
     parser.add_argument("--min-confidence", type=float, default=0.0, help="이 값 미만인 후보는 버림")
     parser.add_argument("--max-clips", type=int, default=None, help="최대 몇 개 클립까지 추출할지")
+    parser.add_argument(
+        "--combined-name",
+        default="highlights_combined.mp4",
+        help="개별 클립을 이어붙인 하나의 하이라이트 영상 파일명",
+    )
+    parser.add_argument(
+        "--no-combined",
+        action="store_true",
+        help="개별 클립만 만들고 하나로 이어붙인 영상은 만들지 않음",
+    )
     return parser
 
 
@@ -185,16 +166,24 @@ def run(args: argparse.Namespace) -> list[HighlightCandidate]:
 
     print(f"[4/4] 후보 {len(candidates)}개 클립 추출 중...")
     os.makedirs(args.output_dir, exist_ok=True)
+    clip_paths: list[str] = []
     for i, candidate in enumerate(candidates, start=1):
         output_path = os.path.join(
             args.output_dir, f"highlight_{i:02d}_{int(candidate.time_sec)}s.mp4"
         )
         extract_clip(args.video, candidate.time_sec, args.pre_seconds, args.post_seconds, output_path)
+        clip_paths.append(output_path)
         sources = "+".join(candidate.sources)
         print(
             f"  [{i}] {format_timestamp(candidate.time_sec)} "
             f"신뢰도={candidate.confidence:.2f} 근거={sources} -> {output_path}"
         )
+
+    if not args.no_combined:
+        combined_path = os.path.join(args.output_dir, args.combined_name)
+        print(f"클립 {len(clip_paths)}개를 하나로 이어붙이는 중...")
+        concat_clips(clip_paths, combined_path)
+        print(f"완성된 하이라이트 영상: {combined_path}")
 
     return candidates
 
