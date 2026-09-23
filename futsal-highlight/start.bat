@@ -7,6 +7,42 @@ echo ============================================
 echo  풋살 하이라이트 / 경기 분석 도구
 echo ============================================
 echo.
+
+set PYCMD=
+where python >nul 2>nul
+if %ERRORLEVEL%==0 set PYCMD=python
+if not defined PYCMD (
+    where py >nul 2>nul
+    if %ERRORLEVEL%==0 set PYCMD=py
+)
+
+if not defined PYCMD (
+    echo Python이 설치되어 있지 않습니다.
+    echo https://python.org 에서 설치하세요.
+    echo ^(설치 화면에서 "Add python.exe to PATH"를 꼭 체크하세요^)
+    echo 설치 후 이 파일을 다시 더블클릭하세요.
+    goto :end
+)
+
+where ffmpeg >nul 2>nul
+if not %ERRORLEVEL%==0 (
+    echo [주의] ffmpeg가 설치되어 있지 않은 것 같습니다.
+    echo        https://ffmpeg.org/download.html 에서 받아 PATH에 추가해야
+    echo        영상 자르기/썸네일 기능이 동작합니다. 일단 계속 진행합니다...
+    echo.
+)
+
+echo 필요한 프로그램을 확인하고 있습니다...
+echo (처음 실행할 때는 몇 분 정도 걸릴 수 있습니다. 창을 닫지 말고 기다려주세요)
+echo.
+%PYCMD% -m pip install -r requirements.txt -q
+if not %ERRORLEVEL%==0 (
+    echo.
+    echo 설치 중 문제가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해보세요.
+    goto :end
+)
+
+echo.
 echo  1) 하이라이트 모드  (골 장면 후보를 클립으로 추출)
 echo  2) 경기 분석 모드   (터치/슈팅 후보를 HTML 리포트로 정리)
 echo.
@@ -36,25 +72,8 @@ echo 사용할 영상: %VIDEO%
 echo 모드: %MODE%
 echo.
 
-where python >nul 2>nul
-if %ERRORLEVEL%==0 (
-    python run.py --mode %MODE% "%VIDEO%" --output-dir output\%MODE%
-    goto :done
-)
+%PYCMD% run.py --mode %MODE% "%VIDEO%" --output-dir output\%MODE%
 
-where py >nul 2>nul
-if %ERRORLEVEL%==0 (
-    py run.py --mode %MODE% "%VIDEO%" --output-dir output\%MODE%
-    goto :done
-)
-
-echo Python이 설치되어 있지 않습니다.
-echo https://python.org 에서 설치하세요.
-echo (설치 화면에서 "Add python.exe to PATH"를 꼭 체크하세요)
-echo 설치 후 이 파일을 다시 더블클릭하세요.
-goto :end
-
-:done
 echo.
 echo ============================================
 echo  완료되었습니다.

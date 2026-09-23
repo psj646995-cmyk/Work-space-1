@@ -20,10 +20,12 @@
    - Windows: [ffmpeg.org](https://ffmpeg.org/download.html)에서 받아 PATH에 추가
    - Mac: `brew install ffmpeg`
    - Linux: `apt-get install -y ffmpeg`
-3. **파이썬 의존성 설치** — 터미널(명령 프롬프트)에서 이 폴더로 이동한 뒤:
-   ```bash
-   pip install -r requirements.txt
-   ```
+3. **파이썬 의존성 설치**
+   - **Windows에서 `실행하기.bat`/`start.bat`으로 실행할 거라면 이 단계는 안 해도 된다** — 더블클릭하면 실행될 때 자동으로 설치한다 (처음 한 번은 몇 분 걸릴 수 있음, 창을 닫지 말고 기다리면 됨)
+   - Mac/Linux 터미널로 직접 실행할 거라면 이 폴더에서 한 번만:
+     ```bash
+     pip install -r requirements.txt
+     ```
    `ultralytics`가 딥러닝 라이브러리(torch)를 함께 설치해서 **처음 한 번은 다운로드에
    시간이 좀 걸린다** (수백 MB). 인터넷이 느리면 몇 분 정도 기다리세요.
 
