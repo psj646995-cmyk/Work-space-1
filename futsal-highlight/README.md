@@ -48,7 +48,7 @@ futsal-highlight/
 ### Windows
 
 1. `input_videos` 폴더에 영상 파일(.mp4/.mov/.avi/.mkv)을 넣습니다
-2. **`실행하기.bat`을 더블클릭**합니다
+2. **`실행하기.bat`을 더블클릭**합니다 (한글 파일명이 깨져서 안 보이면 대신 **`start.bat`**을 더블클릭하세요 — 내용은 완전히 같습니다)
 3. 나오는 메뉴에서 `1`(하이라이트) 또는 `2`(경기 분석)를 입력하고 엔터
 4. 끝나면 `output\highlight` 또는 `output\analyze` 폴더를 확인 (경기 분석은 `report.html`을 브라우저로 더블클릭해서 열어보세요)
 
