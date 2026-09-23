@@ -17,7 +17,8 @@
 1. **Python 3.10 이상** 설치. Windows는 [python.org/downloads](https://python.org/downloads)에서
    설치 파일을 받아 설치하되, 설치 화면에서 **"Add python.exe to PATH"**를 꼭 체크하세요.
 2. **ffmpeg** 설치 (영상 자르기/썸네일 추출에 필요, pip으로는 설치 안 됨)
-   - Windows: [ffmpeg.org](https://ffmpeg.org/download.html)에서 받아 PATH에 추가
+   - **Windows에서 `실행하기.bat`/`start.bat`으로 실행할 거라면 이 단계도 안 해도 된다** — 없으면 첫 실행 때 `bin/` 폴더에 자동으로 받아둔다 (몇 분 정도 걸릴 수 있음). 회사/학교 네트워크라 자동 다운로드가 막혀 있으면 아래 링크에서 직접 받아 PATH에 추가하면 된다
+   - Windows(수동): [ffmpeg.org](https://ffmpeg.org/download.html)에서 받아 PATH에 추가
    - Mac: `brew install ffmpeg`
    - Linux: `apt-get install -y ffmpeg`
 3. **파이썬 의존성 설치**

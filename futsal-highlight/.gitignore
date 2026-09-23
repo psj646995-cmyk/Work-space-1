@@ -5,6 +5,9 @@ highlights_out/
 analysis_out/
 *.pt
 
+# 실행하기.bat/start.bat이 자동으로 받아놓는 ffmpeg 실행 파일
+bin/
+
 # input_videos/, output/ 는 폴더 구조만 추적하고 실제 파일은 커밋하지 않음
 input_videos/*
 !input_videos/.gitkeep

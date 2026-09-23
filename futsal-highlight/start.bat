@@ -26,10 +26,39 @@ goto :end
 :havepython
 where ffmpeg >nul 2>nul
 if %ERRORLEVEL%==0 goto :ffmpegok
-echo [주의] ffmpeg가 설치되어 있지 않은 것 같습니다.
-echo        https://ffmpeg.org/download.html 에서 받아 PATH에 추가해야
-echo        영상 자르기/썸네일 기능이 동작합니다. 일단 계속 진행합니다...
-echo.
+
+if exist "%~dp0bin\ffmpeg.exe" (
+    set "PATH=%~dp0bin;%PATH%"
+    goto :ffmpegok
+)
+
+echo ffmpeg가 없어서 자동으로 받는 중입니다 (처음 한 번만, 몇 분 걸릴 수 있습니다)...
+if exist "%TEMP%\futsal_ffmpeg.zip" del /q "%TEMP%\futsal_ffmpeg.zip" >nul 2>nul
+powershell -NoProfile -Command "$ProgressPreference='SilentlyContinue'; try { Invoke-WebRequest -Uri 'https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip' -OutFile '%TEMP%\futsal_ffmpeg.zip' } catch { exit 1 }"
+
+if not exist "%TEMP%\futsal_ffmpeg.zip" (
+    echo ffmpeg 자동 다운로드에 실패했습니다.
+    echo https://ffmpeg.org/download.html 에서 직접 받아 PATH에 추가한 뒤 다시 실행하세요.
+    echo 일단 나머지는 계속 진행합니다...
+    echo.
+    goto :ffmpegok
+)
+
+if exist "%TEMP%\futsal_ffmpeg_extract" rd /s /q "%TEMP%\futsal_ffmpeg_extract" >nul 2>nul
+powershell -NoProfile -Command "Expand-Archive -Path '%TEMP%\futsal_ffmpeg.zip' -DestinationPath '%TEMP%\futsal_ffmpeg_extract' -Force"
+
+if not exist "%~dp0bin" mkdir "%~dp0bin" >nul 2>nul
+for /r "%TEMP%\futsal_ffmpeg_extract" %%F in (ffmpeg.exe) do copy /y "%%F" "%~dp0bin\ffmpeg.exe" >nul
+for /r "%TEMP%\futsal_ffmpeg_extract" %%F in (ffprobe.exe) do copy /y "%%F" "%~dp0bin\ffprobe.exe" >nul
+
+if exist "%~dp0bin\ffmpeg.exe" (
+    set "PATH=%~dp0bin;%PATH%"
+) else (
+    echo ffmpeg 자동 설치에 실패했습니다.
+    echo https://ffmpeg.org/download.html 에서 직접 받아 PATH에 추가한 뒤 다시 실행하세요.
+    echo 일단 나머지는 계속 진행합니다...
+    echo.
+)
 
 :ffmpegok
 echo 필요한 프로그램을 확인하고 있습니다...
