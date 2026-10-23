@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>한글 탐험대</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: night-sky expedition. Left = letter workshop (slots → big syllable → keys), right = mission + treasure log. Stacks on phones. */
+:root {
+  color-scheme: dark;
+  --sky: #10163a;          /* page ground */
+  --sky-2: #1a2257;        /* raised panels */
+  --sky-3: #262f6e;        /* inset wells */
+  --ink: #f3f1ff;          /* main text */
+  --ink-dim: #a9acd6;      /* secondary text */
+  --cons: #35d0bd;         /* 자음 (consonants) */
+  --cons-deep: #1d8f82;
+  --vow: #ffb547;          /* 모음 (vowels) */
+  --vow-deep: #c47d12;
+  --fin: #ff6f91;          /* 받침 (final consonant) */
+  --fin-deep: #b83a5c;
+  --gold: #ffd84d;
+  --on-key: #0d1330;
+  --font-display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --font-body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --r: 18px;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--sky);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 17px;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+#stars { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 40px;
+  display: flex; flex-direction: column; gap: 18px;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+
+/* header */
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand svg { width: 52px; height: 52px; flex: none; }
+.brand h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 34px; line-height: 1.1; letter-spacing: .5px; }
+.brand p { margin: 0; color: var(--ink-dim); font-size: 15px; }
+.score { display: flex; gap: 10px; flex-wrap: wrap; }
+.pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--sky-2); border: 2px solid var(--sky-3);
+  border-radius: 999px; padding: 6px 16px;
+  font-family: var(--font-display); font-size: 20px;
+  font-variant-numeric: tabular-nums;
+}
+.pill .ic { font-size: 22px; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+@media (max-width: 900px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--sky-2); border-radius: 26px; padding: 20px; border: 2px solid var(--sky-3); }
+
+/* workshop */
+.workshop { display: flex; flex-direction: column; gap: 18px; }
+.stage { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; }
+@media (max-width: 620px) { .stage { grid-template-columns: 1fr; } }
+.screen {
+  position: relative;
+  width: 210px; height: 210px; max-width: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #34408f 0%, var(--sky-3) 55%, #161c48 100%);
+  border: 6px solid #3a4590;
+  box-shadow: 0 0 0 6px #10163a, 0 0 40px rgba(255, 216, 77, .12);
+  display: grid; place-items: center;
+  margin: 0 auto;
+}
+.screen button {
+  all: unset; cursor: pointer;
+  width: 100%; height: 100%; display: grid; place-items: center; border-radius: 50%;
+}
+.screen button:focus-visible { outline: 3px solid var(--gold); outline-offset: 6px; }
+.big {
+  font-family: var(--font-display);
+  font-size: 128px; line-height: 1;
+  color: var(--ink);
+  text-shadow: 0 6px 0 rgba(0,0,0,.25);
+}
+.big.empty { font-size: 22px; color: var(--ink-dim); text-align: center; line-height: 1.4; padding: 0 30px; text-shadow: none; }
+.big.pop { animation: pop .45s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes pop { 0% { transform: scale(.4); } 100% { transform: scale(1); } }
+
+.side-of-screen { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.slot {
+  border-radius: var(--r); padding: 10px 6px 12px;
+  background: var(--sky-3); border: 3px dashed rgba(255,255,255,.18);
+  text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  min-height: 112px; justify-content: space-between;
+}
+.slot .lab { font-size: 14px; color: var(--ink-dim); letter-spacing: .5px; }
+.slot .jamo { font-family: var(--font-display); font-size: 48px; line-height: 1.1; min-height: 53px; }
+.slot .nm { font-size: 14px; min-height: 21px; }
+.slot.filled { border-style: solid; }
+.slot.cho.filled { border-color: var(--cons); }
+.slot.cho .jamo { color: var(--cons); }
+.slot.jung.filled { border-color: var(--vow); }
+.slot.jung .jamo { color: var(--vow); }
+.slot.jong.filled { border-color: var(--fin); }
+.slot.jong .jamo { color: var(--fin); }
+.slot.next { animation: blink 1.4s ease-in-out infinite; }
+@keyframes blink { 50% { border-color: rgba(255,255,255,.55); } }
+
+.formula {
+  font-family: var(--font-display); font-size: 24px; min-height: 36px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px;
+}
+.formula .c { color: var(--cons); } .formula .v { color: var(--vow); } .formula .f { color: var(--fin); }
+.formula .op { color: var(--ink-dim); }
+.guide { color: var(--ink-dim); font-size: 16px; min-height: 24px; margin: 0; }
+.guide b { color: var(--gold); font-weight: 400; font-family: var(--font-display); font-size: 18px; }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.btn {
+  border: 0; border-radius: 14px; padding: 10px 18px;
+  font-family: var(--font-display); font-size: 19px;
+  background: var(--sky-3); color: var(--ink);
+  box-shadow: 0 4px 0 #0b1030;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: transform .06s;
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #0b1030; }
+.btn.primary { background: var(--gold); color: var(--on-key); box-shadow: 0 4px 0 #a88a12; }
+.btn.primary:active { box-shadow: 0 1px 0 #a88a12; }
+.btn:disabled { opacity: .4; cursor: default; }
+
+/* keyboard */
+.keys-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.keys-head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 22px; }
+.keys-head h2 .c { color: var(--cons); } .keys-head h2 .v { color: var(--vow); }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; color: var(--ink-dim); cursor: pointer; user-select: none; }
+.toggle input { width: 22px; height: 22px; accent-color: var(--gold); cursor: pointer; }
+.keygroup { display: flex; flex-direction: column; gap: 10px; }
+.keygrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 10px; }
+.key {
+  border: 0; border-radius: 16px;
+  min-height: 70px; padding: 4px 0 6px;
+  font-family: var(--font-display); font-size: 36px; line-height: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  color: var(--on-key);
+  transition: transform .06s, box-shadow .06s;
+}
+.key small { font-family: var(--font-body); font-size: 12px; font-weight: 700; opacity: .7; }
+.key.cons { background: var(--cons); box-shadow: 0 6px 0 var(--cons-deep); }
+.key.vow { background: var(--vow); box-shadow: 0 6px 0 var(--vow-deep); }
+.key.cons.as-fin { background: var(--fin); box-shadow: 0 6px 0 var(--fin-deep); }
+.key:active, .key.hit { transform: translateY(5px); box-shadow: 0 1px 0 rgba(0,0,0,.4); }
+.key.extra { outline: 2px dashed rgba(13,19,48,.35); outline-offset: -6px; }
+.key.no-fin { opacity: .45; }
+.sep { height: 2px; background: var(--sky-3); border-radius: 2px; }
+.kbd-tip { font-size: 13px; color: var(--ink-dim); margin: 0; }
+
+/* side column */
+.side { display: flex; flex-direction: column; gap: 18px; }
+.side h2 { margin: 0 0 4px; font-family: var(--font-display); font-weight: 400; font-size: 24px; }
+.side .sub { margin: 0 0 12px; color: var(--ink-dim); font-size: 15px; }
+.mission-card {
+  display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: center;
+  background: var(--sky-3); border-radius: var(--r); padding: 14px;
+}
+.mission-emoji { font-size: 64px; line-height: 1; width: 84px; height: 84px; display: grid; place-items: center; background: var(--sky); border-radius: 50%; }
+.mission-text { font-family: var(--font-display); font-size: 20px; line-height: 1.3; }
+.mission-hint { display: flex; gap: 6px; margin-top: 8px; }
+.hbox {
+  width: 42px; height: 42px; border-radius: 10px; background: var(--sky);
+  display: grid; place-items: center; font-family: var(--font-display); font-size: 26px; color: var(--ink-dim);
+}
+.hbox.c { color: var(--cons); } .hbox.v { color: var(--vow); } .hbox.f { color: var(--fin); }
+.mission-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.mission-actions .btn { font-size: 17px; padding: 8px 14px; }
+
+.log-count { font-family: var(--font-display); color: var(--gold); }
+.treasures { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 8px; }
+.tr {
+  aspect-ratio: 1; max-width: 100%; border-radius: 14px; background: var(--sky-3);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  font-size: 26px; line-height: 1.1; border: 0; padding: 0;
+}
+.tr span { font-family: var(--font-display); font-size: 15px; }
+.tr.locked { color: var(--ink-dim); font-family: var(--font-display); font-size: 22px; opacity: .5; cursor: default; }
+
+/* celebration */
+.cele {
+  position: fixed; inset: 0; z-index: 20;
+  display: grid; place-items: center;
+  background: rgba(8, 11, 32, .72);
+  padding: 20px;
+}
+.cele-card {
+  background: var(--sky-2); border: 3px solid var(--gold); border-radius: 30px;
+  padding: 26px 34px; text-align: center; max-width: 360px; width: 100%;
+  animation: rise .5s cubic-bezier(.2, 1.4, .4, 1);
+}
+@keyframes rise { from { transform: translateY(40px) scale(.8); opacity: 0; } }
+.cele-tag { font-family: var(--font-display); color: var(--gold); font-size: 22px; }
+.cele-emoji { font-size: 96px; line-height: 1.15; }
+.cele-word { font-family: var(--font-display); font-size: 64px; line-height: 1.1; }
+.cele-msg { color: var(--ink-dim); margin: 6px 0 16px; }
+.spark { position: fixed; z-index: 30; pointer-events: none; font-size: 22px; animation: fly 1s ease-out forwards; }
+@keyframes fly { to { transform: translate(var(--dx), var(--dy)) rotate(240deg); opacity: 0; } }
+
+.notice { background: var(--fin-deep); color: var(--ink); border-radius: 14px; padding: 10px 14px; font-size: 15px; }
+
+@media (max-width: 480px) {
+  .brand h1 { font-size: 28px; }
+  .big { font-size: 110px; }
+  .screen { width: 180px; height: 180px; }
+  .key { font-size: 32px; min-height: 64px; }
+  .keygrid { grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<canvas id="stars" aria-hidden="true"></canvas>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="32" r="30" fill="#262f6e"/>
+        <path d="M32 8c9 7 13 17 11 30H21C19 25 23 15 32 8z" fill="#f3f1ff"/>
+        <circle cx="32" cy="26" r="6" fill="#35d0bd"/>
+        <path d="M21 38l-7 8 9-2zM43 38l7 8-9-2z" fill="#ff6f91"/>
+        <path d="M26 40h12l-2 10h-8z" fill="#ffb547"/>
+      </svg>
+      <div>
+        <h1>한글 탐험대</h1>
+        <p>자음이랑 모음을 합체해서 글자를 만들어요</p>
+      </div>
+    </div>
+    <div class="score">
+      <div class="pill" title="지금까지 만든 서로 다른 글자 수"><span class="ic">⭐</span><span id="starCount">0</span><small style="font-size:14px;color:var(--ink-dim)">글자</small></div>
+      <div class="pill" title="찾은 보물 단어 수"><span class="ic">💎</span><span id="gemCount">0</span><small style="font-size:14px;color:var(--ink-dim)">보물</small></div>
+    </div>
+  </header>
+
+  <div id="voiceNotice" class="notice" hidden>이 기기에서 한국어 목소리를 찾지 못했어요. 소리가 안 나면 크롬이나 사파리에서 열어 주세요.</div>
+
+  <div class="layout">
+    <main class="workshop">
+      <section class="panel stage" aria-label="글자 만들기">
+        <div class="screen">
+          <button id="screenBtn" type="button" aria-label="글자 소리 다시 듣기">
+            <div id="big" class="big empty">아래 자음을 눌러 시작해요</div>
+          </button>
+        </div>
+        <div class="side-of-screen">
+          <div class="slots">
+            <div class="slot cho" id="slotCho"><span class="lab">첫소리</span><span class="jamo"></span><span class="nm"></span></div>
+            <div class="slot jung" id="slotJung"><span class="lab">가운데소리</span><span class="jamo"></span><span class="nm"></span></div>
+            <div class="slot jong" id="slotJong"><span class="lab">받침</span><span class="jamo"></span><span class="nm"></span></div>
+          </div>
+          <div class="formula" id="formula" aria-live="polite"></div>
+          <p class="guide" id="guide"></p>
+          <div class="actions">
+            <button class="btn primary" id="sayBtn" type="button">🔊 다시 듣기</button>
+            <button class="btn" id="slowBtn" type="button">🐢 천천히</button>
+            <button class="btn" id="backBtn" type="button">⬅ 지우기</button>
+            <button class="btn" id="resetBtn" type="button">↺ 처음부터</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel keygroup" aria-label="글자 단추">
+        <div class="keys-head">
+          <h2><span class="c">자음</span> 친구들</h2>
+          <label class="toggle"><input type="checkbox" id="moreToggle"> 쌍자음 · 어려운 모음도 보기</label>
+        </div>
+        <div class="keygrid" id="consKeys"></div>
+        <div class="sep"></div>
+        <div class="keys-head"><h2><span class="v">모음</span> 친구들</h2></div>
+        <div class="keygrid" id="vowKeys"></div>
+        <p class="kbd-tip">컴퓨터 키보드로도 칠 수 있어요 (한글 자판 위치). 스페이스 = 다시 듣기, 백스페이스 = 지우기</p>
+      </section>
+    </main>
+
+    <aside class="side">
+      <section class="panel" aria-label="오늘의 미션">
+        <h2>🚀 미션</h2>
+        <p class="sub">그림을 보고 글자를 만들어 봐요</p>
+        <div class="mission-card">
+          <div class="mission-emoji" id="mEmoji"></div>
+          <div>
+            <div class="mission-text" id="mText"></div>
+            <div class="mission-hint" id="mHint"></div>
+          </div>
+        </div>
+        <div class="mission-actions">
+          <button class="btn" id="hintBtn" type="button">💡 힌트</button>
+          <button class="btn" id="mSayBtn" type="button">🔊 들어 보기</button>
+          <button class="btn" id="skipBtn" type="button">다른 문제 ➜</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="보물 단어 도감">
+        <h2>💎 보물 도감</h2>
+        <p class="sub">진짜 단어를 만들면 보물이 생겨요 · <span class="log-count" id="logCount"></span></p>
+        <div class="treasures" id="treasures"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+<div class="cele" id="cele" hidden>
+  <div class="cele-card" role="dialog" aria-modal="true" aria-labelledby="celeWord">
+    <div class="cele-tag" id="celeTag">보물 발견!</div>
+    <div class="cele-emoji" id="celeEmoji"></div>
+    <div class="cele-word" id="celeWord"></div>
+    <p class="cele-msg" id="celeMsg"></p>
+    <button class="btn primary" id="celeClose" type="button">계속 탐험하기</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ---------- 한글 data ----------
+  const CHO = [...'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'];
+  const JUNG = [...'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'];
+  const JONG = ['', ...'ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ'];
+  const BASIC_CONS = [...'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ'];
+  const DOUBLE_CONS = [...'ㄲㄸㅃㅆㅉ'];
+  const BASIC_VOW = [...'ㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣ'];
+  const MORE_VOW = [...'ㅐㅒㅔㅖㅘㅙㅚㅝㅞㅟㅢ'];
+  const NAME = {
+    'ㄱ':'기역','ㄴ':'니은','ㄷ':'디귿','ㄹ':'리을','ㅁ':'미음','ㅂ':'비읍','ㅅ':'시옷','ㅇ':'이응',
+    'ㅈ':'지읒','ㅊ':'치읓','ㅋ':'키읔','ㅌ':'티읕','ㅍ':'피읖','ㅎ':'히읗',
+    'ㄲ':'쌍기역','ㄸ':'쌍디귿','ㅃ':'쌍비읍','ㅆ':'쌍시옷','ㅉ':'쌍지읒',
+    'ㅏ':'아','ㅐ':'애','ㅑ':'야','ㅒ':'얘','ㅓ':'어','ㅔ':'에','ㅕ':'여','ㅖ':'예','ㅗ':'오','ㅘ':'와',
+    'ㅙ':'왜','ㅚ':'외','ㅛ':'요','ㅜ':'우','ㅝ':'워','ㅞ':'웨','ㅟ':'위','ㅠ':'유','ㅡ':'으','ㅢ':'의','ㅣ':'이'
+  };
+  // One-syllable real words a 6–7 year old knows.
+  const TREASURES = [
+    ['곰','🐻'],['개','🐶'],['소','🐮'],['말','🐴'],['연','🪁'],['새','🐦'],['게','🦀'],['뱀','🐍'],
+    ['쥐','🐭'],['양','🐑'],['별','⭐'],['달','🌙'],['해','☀️'],['비','☔'],['눈','⛄'],['꽃','🌸'],
+    ['산','⛰️'],['물','💧'],['불','🔥'],['집','🏠'],['문','🚪'],['차','🚗'],['배','🚢'],['공','⚽'],
+    ['책','📚'],['빵','🍞'],['밥','🍚'],['꿀','🍯'],['귤','🍊'],['떡','🍡'],['옷','👕'],['손','✋'],
+    ['발','🦶'],['코','👃'],['귀','👂'],['입','👄'],['이','🦷'],['똥','💩'],['춤','💃'],['북','🥁'],
+    ['종','🔔'],['컵','🥤'],['돈','💰'],['잠','😴'],['왕','👑'],['성','🏰'],['탑','🗼'],['풀','🌿'],
+    ['숲','🌳'],['활','🏹'],['굴','🦪'],['혀','👅']
+  ];
+  const TREASURE_MAP = Object.fromEntries(TREASURES);
+  const KEYMAP = {
+    r:'ㄱ',s:'ㄴ',e:'ㄷ',f:'ㄹ',a:'ㅁ',q:'ㅂ',t:'ㅅ',d:'ㅇ',w:'ㅈ',c:'ㅊ',z:'ㅋ',x:'ㅌ',v:'ㅍ',g:'ㅎ',
+    R:'ㄲ',E:'ㄸ',Q:'ㅃ',T:'ㅆ',W:'ㅉ',
+    k:'ㅏ',o:'ㅐ',i:'ㅑ',O:'ㅒ',j:'ㅓ',p:'ㅔ',u:'ㅕ',P:'ㅖ',h:'ㅗ',y:'ㅛ',n:'ㅜ',b:'ㅠ',m:'ㅡ',l:'ㅣ'
+  };
+  const isVowel = ch => JUNG.includes(ch);
+  const canBeFinal = ch => JONG.includes(ch);
+  const compose = (c, v, j) =>
+    String.fromCharCode(0xAC00 + (CHO.indexOf(c) * 21 + JUNG.indexOf(v)) * 28 + (j ? JONG.indexOf(j) : 0));
+  const decompose = syl => {
+    const n = syl.charCodeAt(0) - 0xAC00;
+    return { cho: CHO[Math.floor(n / 588)], jung: JUNG[Math.floor((n % 588) / 28)], jong: JONG[n % 28] || null };
+  };
+
+  // ---------- saved progress (per browser, optional) ----------
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem('hangul.' + k); return v ? JSON.parse(v) : d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem('hangul.' + k, JSON.stringify(v)); } catch {} }
+  };
+  const made = new Set(store.get('made', []));
+  const found = new Set(store.get('found', []));
+  let showMore = store.get('more', false);
+
+  // ---------- voice ----------
+  const synth = window.speechSynthesis;
+  let koVoice = null;
+  function pickVoice() {
+    if (!synth) return;
+    const vs = synth.getVoices();
+    koVoice = vs.find(v => /ko[-_]KR/i.test(v.lang) && /google|yuna|sora|heami|female/i.test(v.name))
+           || vs.find(v => /^ko/i.test(v.lang)) || null;
+  }
+  if (synth) {
+    pickVoice();
+    synth.addEventListener?.('voiceschanged', pickVoice);
+    setTimeout(() => { pickVoice(); if (!koVoice) $('voiceNotice').hidden = false; }, 1800);
+  }
+  function say(texts, { rate = 0.85 } = {}) {
+    if (!synth) { $('voiceNotice').hidden = false; return; }
+    synth.cancel();
+    [].concat(texts).forEach(t => {
+      const u = new SpeechSynthesisUtterance(t);
+      u.lang = 'ko-KR'; u.rate = rate; u.pitch = 1.1;
+      if (koVoice) u.voice = koVoice;
+      synth.speak(u);
+    });
+  }
+
+  // ---------- little sound effects ----------
+  let actx = null;
+  function blip(freq, dur = 0.09, type = 'triangle', when = 0) {
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const t = actx.currentTime + when;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.12, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g).connect(actx.destination);
+      o.start(t); o.stop(t + dur + 0.02);
+    } catch {}
+  }
+  const chime = () => [660, 880, 1175].forEach((f, i) => blip(f, 0.18, 'sine', i * 0.09));
+  const fanfare = () => [523, 659, 784, 1047, 1319].forEach((f, i) => blip(f, 0.22, 'square', i * 0.1));
+
+  // ---------- state ----------
+  const st = { cho: null, jung: null, jong: null };
+  let lastSyllable = null;
+  let mission = null, hintLevel = 0;
+
+  const $ = id => document.getElementById(id);
+
+  function current() { return st.cho && st.jung ? compose(st.cho, st.jung, st.jong) : null; }
+
+  function pressConsonant(ch) {
+    blip(330);
+    if (!st.cho || (st.cho && !st.jung)) {
+      Object.assign(st, { cho: ch, jung: null, jong: null });
+      say(NAME[ch]);
+      render(`<b>${ch}</b>은 “${NAME[ch]}”이에요. 이제 <b>모음</b>을 눌러 봐요!`);
+    } else if (!st.jong && canBeFinal(ch)) {
+      st.jong = ch;
+      finish(`<b>${ch}</b>이 받침으로 쏙! 아래에 붙었어요.`);
+    } else if (!st.jong) {
+      // ㄸ ㅃ ㅉ never sit at the bottom of a syllable
+      Object.assign(st, { cho: ch, jung: null, jong: null });
+      say(NAME[ch]);
+      render(`<b>${ch}</b>은 받침이 될 수 없어요. 새 글자를 시작할게요!`);
+    } else {
+      Object.assign(st, { cho: ch, jung: null, jong: null });
+      say(NAME[ch]);
+      render(`새 글자 시작! <b>${ch}</b>은 “${NAME[ch]}”이에요.`);
+    }
+  }
+
+  function pressVowel(v) {
+    blip(520);
+    if (!st.cho || st.jong) {
+      Object.assign(st, { cho: 'ㅇ', jung: v, jong: null });
+      finish(`모음만 쓸 때는 앞에 <b>ㅇ</b>을 붙여요. ㅇ은 여기서 소리가 없어요!`);
+    } else {
+      st.jung = v;
+      finish(`받침도 붙여 볼까요? 자음을 하나 더 눌러 봐요!`);
+    }
+  }
+
+  function finish(guideHtml) {
+    const syl = current();
+    say(syl);
+    chime();
+    const isNew = !made.has(syl);
+    if (isNew) { made.add(syl); store.set('made', [...made]); }
+    render(guideHtml, true);
+    if (isNew) spark($('starCount'), '⭐', 6);
+
+    const isMission = mission && syl === mission[0];
+    if (TREASURE_MAP[syl] || isMission) {
+      const first = !found.has(syl);
+      if (first) { found.add(syl); store.set('found', [...found]); renderTreasures(); }
+      setTimeout(() => { if (current() === syl) celebrate(syl, isMission, first); }, 650);
+    }
+  }
+
+  function backspace() {
+    if (st.jong) st.jong = null;
+    else if (st.jung) { st.jung = null; if (st.cho === 'ㅇ') st.cho = null; }
+    else st.cho = null;
+    blip(220);
+    const syl = current();
+    if (syl) say(syl); else if (st.cho) say(NAME[st.cho]);
+    render('하나 지웠어요.');
+  }
+  function reset() {
+    Object.assign(st, { cho: null, jung: null, jong: null });
+    synth?.cancel();
+    render('');
+  }
+
+  // ---------- rendering ----------
+  function fillSlot(el, ch, next) {
+    el.querySelector('.jamo').textContent = ch || '';
+    el.querySelector('.nm').textContent = ch ? NAME[ch] : '';
+    el.classList.toggle('filled', !!ch);
+    el.classList.toggle('next', !!next);
+  }
+
+  function render(guideHtml, pop = false) {
+    const syl = current();
+    fillSlot($('slotCho'), st.cho, !st.cho);
+    fillSlot($('slotJung'), st.jung, st.cho && !st.jung);
+    fillSlot($('slotJong'), st.jong, st.jung && !st.jong);
+
+    const big = $('big');
+    if (syl) { big.textContent = syl; big.className = 'big'; }
+    else if (st.cho) { big.textContent = st.cho; big.className = 'big'; }
+    else { big.textContent = '아래 자음을 눌러 시작해요'; big.className = 'big empty'; }
+    if (pop || st.cho) { void big.offsetWidth; big.classList.add('pop'); }
+
+    const parts = [];
+    if (st.cho) parts.push(`<span class="c">${st.cho}</span>`);
+    if (st.jung) parts.push(`<span class="v">${st.jung}</span>`);
+    if (st.jong) parts.push(`<span class="f">${st.jong}</span>`);
+    $('formula').innerHTML = syl ? parts.join('<span class="op">+</span>') + `<span class="op">=</span><span>${syl}</span>` : parts.join('');
+
+    $('guide').innerHTML = guideHtml ?? '';
+    if (!st.cho && !guideHtml) $('guide').innerHTML = '<b>ㄱ</b>을 누르고 <b>ㅏ</b>를 눌러 보세요. “가”가 돼요!';
+
+    // when a syllable waits for a 받침, consonant keys turn pink
+    const finMode = !!(st.jung && !st.jong);
+    document.querySelectorAll('.key.cons').forEach(k => {
+      k.classList.toggle('as-fin', finMode && canBeFinal(k.dataset.ch));
+      k.classList.toggle('no-fin', finMode && !canBeFinal(k.dataset.ch));
+    });
+
+    $('sayBtn').disabled = !st.cho;
+    $('slowBtn').disabled = !syl;
+    $('backBtn').disabled = !st.cho;
+    $('starCount').textContent = made.size;
+    $('gemCount').textContent = found.size;
+    lastSyllable = syl;
+  }
+
+  function buildKeys() {
+    const cons = showMore ? [...BASIC_CONS, ...DOUBLE_CONS] : BASIC_CONS;
+    const vows = showMore ? [...BASIC_VOW, ...MORE_VOW] : BASIC_VOW;
+    const mk = (ch, cls, extra) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `key ${cls}${extra ? ' extra' : ''}`;
+      b.dataset.ch = ch;
+      b.setAttribute('aria-label', `${ch} ${NAME[ch]}`);
+      b.innerHTML = `${ch}<small>${NAME[ch]}</small>`;
+      return b;
+    };
+    $('consKeys').replaceChildren(...cons.map(ch => mk(ch, 'cons', DOUBLE_CONS.includes(ch))));
+    $('vowKeys').replaceChildren(...vows.map(ch => mk(ch, 'vow', MORE_VOW.includes(ch))));
+    $('moreToggle').checked = showMore;
+  }
+
+  function renderTreasures() {
+    $('treasures').replaceChildren(...TREASURES.map(([w, e]) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      if (found.has(w)) {
+        b.className = 'tr';
+        b.innerHTML = `${e}<span>${w}</span>`;
+        b.setAttribute('aria-label', `${w} 다시 듣기`);
+        b.addEventListener('click', () => say(w));
+      } else {
+        b.className = 'tr locked';
+        b.textContent = '?';
+        b.disabled = true;
+        b.setAttribute('aria-label', '아직 못 찾은 보물');
+      }
+      return b;
+    }));
+    $('logCount').textContent = `${found.size} / ${TREASURES.length}`;
+    $('gemCount').textContent = found.size;
+  }
+
+  // ---------- mission ----------
+  function newMission() {
+    const pool = TREASURES.filter(([w]) => !found.has(w) && (showMore || !needsMore(w)));
+    const list = pool.length ? pool : TREASURES.filter(([w]) => showMore || !needsMore(w));
+    let pick;
+    do { pick = list[Math.floor(Math.random() * list.length)]; } while (list.length > 1 && mission && pick[0] === mission[0]);
+    mission = pick; hintLevel = 0;
+    renderMission();
+  }
+  function needsMore(w) {
+    const d = decompose(w);
+    return DOUBLE_CONS.includes(d.cho) || MORE_VOW.includes(d.jung) || (d.jong && !BASIC_CONS.includes(d.jong));
+  }
+  function renderMission() {
+    const [w, e] = mission;
+    const d = decompose(w);
+    $('mEmoji').textContent = e;
+    $('mText').textContent = hintLevel >= (d.jong ? 3 : 2) ? `정답은 “${w}”!` : '이건 무슨 글자일까?';
+    const boxes = [['c', d.cho], ['v', d.jung]];
+    if (d.jong) boxes.push(['f', d.jong]);
+    $('mHint').innerHTML = boxes.map(([cls, ch], i) =>
+      `<div class="hbox ${i < hintLevel ? cls : ''}">${i < hintLevel ? ch : '?'}</div>`).join('');
+    $('hintBtn').disabled = hintLevel >= boxes.length;
+  }
+
+  // ---------- celebration ----------
+  function celebrate(word, isMission, first) {
+    const emoji = TREASURE_MAP[word] || '✨';
+    $('celeTag').textContent = isMission ? '미션 성공!' : first ? '새 보물 발견!' : '보물 단어!';
+    $('celeEmoji').textContent = emoji;
+    $('celeWord').textContent = word;
+    $('celeMsg').textContent = isMission ? '그림을 보고 글자를 만들었어요. 대단해요!' : first ? '보물 도감에 넣어 두었어요.' : '이미 찾은 보물이에요. 또 만들었네요!';
+    $('cele').hidden = false;
+    fanfare();
+    setTimeout(() => say(isMission ? [word, '미션 성공!'] : [word]), 250);
+    spark($('celeEmoji'), isMission ? '🚀' : '💎', 14);
+    $('celeClose').focus();
+    if (isMission) $('cele').dataset.mission = '1';
+  }
+  function closeCele() {
+    $('cele').hidden = true;
+    if ($('cele').dataset.mission) { delete $('cele').dataset.mission; newMission(); reset(); }
+  }
+
+  function spark(anchor, ch, n) {
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const r = anchor.getBoundingClientRect();
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('span');
+      s.className = 'spark';
+      s.textContent = ch;
+      const a = Math.random() * Math.PI * 2, dist = 50 + Math.random() * 90;
+      s.style.left = r.left + r.width / 2 + 'px';
+      s.style.top = r.top + r.height / 2 + 'px';
+      s.style.setProperty('--dx', Math.cos(a) * dist + 'px');
+      s.style.setProperty('--dy', Math.sin(a) * dist + 'px');
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 1000);
+    }
+  }
+
+  // ---------- star sky ----------
+  function sky() {
+    const cv = $('stars'), cx = cv.getContext('2d');
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let stars = [];
+    const size = () => {
+      const dpr = Math.min(devicePixelRatio || 1, 2);
+      cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      stars = Array.from({ length: Math.round(innerWidth * innerHeight / 9000) }, () => ({
+        x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+        r: Math.random() * 1.4 + 0.3, p: Math.random() * 6.28, s: 0.5 + Math.random() * 1.5
+      }));
+    };
+    const draw = t => {
+      cx.clearRect(0, 0, innerWidth, innerHeight);
+      for (const s of stars) {
+        const a = still ? 0.7 : 0.35 + 0.65 * Math.abs(Math.sin(s.p + t / 1000 * s.s));
+        cx.globalAlpha = a; cx.fillStyle = '#f3f1ff';
+        cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, 6.28); cx.fill();
+      }
+      if (!still) requestAnimationFrame(draw);
+    };
+    size(); addEventListener('resize', () => { size(); if (still) draw(0); });
+    requestAnimationFrame(draw);
+  }
+
+  // ---------- wiring ----------
+  function onKey(ch) {
+    if (!$('cele').hidden) closeCele();
+    isVowel(ch) ? pressVowel(ch) : pressConsonant(ch);
+    const k = document.querySelector(`.key[data-ch="${ch}"]`);
+    if (k) { k.classList.add('hit'); setTimeout(() => k.classList.remove('hit'), 120); }
+  }
+  document.addEventListener('click', e => {
+    const k = e.target.closest('.key');
+    if (k) onKey(k.dataset.ch);
+  });
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!$('cele').hidden && (e.key === 'Escape' || e.key === 'Enter')) { e.preventDefault(); closeCele(); return; }
+    // accept both English-layout keys and Korean IME characters
+    const ch = KEYMAP[e.key] || (NAME[e.key] ? e.key : null);
+    if (ch) {
+      if (!showMore && (DOUBLE_CONS.includes(ch) || MORE_VOW.includes(ch))) { showMore = true; store.set('more', true); buildKeys(); }
+      e.preventDefault(); onKey(ch); return;
+    }
+    if (e.key === 'Backspace') { e.preventDefault(); if (st.cho) backspace(); }
+    else if (e.key === 'Escape') reset();
+    else if (e.key === ' ' && !e.target.closest('button, input')) { e.preventDefault(); replay(); }
+  });
+  function replay() {
+    if (lastSyllable) say(lastSyllable);
+    else if (st.cho) say(NAME[st.cho]);
+  }
+  $('screenBtn').addEventListener('click', replay);
+  $('sayBtn').addEventListener('click', replay);
+  $('slowBtn').addEventListener('click', () => {
+    if (!lastSyllable) return;
+    const parts = [st.cho === 'ㅇ' ? null : NAME[st.cho], NAME[st.jung], st.jong && NAME[st.jong]].filter(Boolean);
+    say([...parts, lastSyllable], { rate: 0.7 });
+  });
+  $('backBtn').addEventListener('click', backspace);
+  $('resetBtn').addEventListener('click', reset);
+  $('moreToggle').addEventListener('change', e => { showMore = e.target.checked; store.set('more', showMore); buildKeys(); render($('guide').innerHTML); });
+  $('hintBtn').addEventListener('click', () => { hintLevel++; blip(740); renderMission(); });
+  $('mSayBtn').addEventListener('click', () => say(mission[0]));
+  $('skipBtn').addEventListener('click', newMission);
+  $('celeClose').addEventListener('click', closeCele);
+  $('cele').addEventListener('click', e => { if (e.target.id === 'cele') closeCele(); });
+
+  buildKeys();
+  renderTreasures();
+  newMission();
+  render('');
+  sky();
+})();
+</script>
+</body>
+</html>
