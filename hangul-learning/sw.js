@@ -1,6 +1,6 @@
 // Keeps 한글 탐험대 working with no internet after the first visit.
 // Bump VERSION whenever index.html changes so devices pick up the new copy.
-const VERSION = 'hangul-v4';
+const VERSION = 'hangul-v5';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
