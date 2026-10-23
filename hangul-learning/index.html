@@ -205,6 +205,55 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 .mission-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .mission-actions .btn { font-size: 17px; padding: 8px 14px; }
 
+/* mission track: target word above the workshop */
+.track {
+  grid-column: 1 / -1;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center;
+  background: var(--sky-3); border-radius: var(--r); padding: 12px 14px;
+}
+.track-emoji { font-size: 54px; line-height: 1; width: 76px; height: 76px; display: grid; place-items: center; background: var(--sky); border-radius: 50%; }
+.track-top { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; margin-bottom: 6px; }
+.track-stage { font-family: var(--font-display); color: var(--gold); font-size: 18px; }
+.track-count { color: var(--ink-dim); font-size: 15px; font-variant-numeric: tabular-nums; }
+.track-boxes { display: flex; gap: 8px; flex-wrap: wrap; }
+.tbox {
+  width: 62px; height: 62px; border-radius: 14px; background: var(--sky);
+  display: grid; place-items: center;
+  font-family: var(--font-display); font-size: 38px; line-height: 1; color: var(--ink-dim);
+  border: 3px solid transparent;
+}
+.tbox.done { background: var(--cons); color: var(--on-key); animation: pop .4s cubic-bezier(.2, 1.6, .4, 1); }
+.tbox.cur { border: 3px dashed var(--gold); animation: blink 1.4s ease-in-out infinite; }
+.tbox .ghost { opacity: .45; }
+.tbox .parts { font-size: 18px; display: flex; gap: 2px; }
+.tbox .parts .c { color: var(--cons); } .tbox .parts .v { color: var(--vow); } .tbox .parts .f { color: var(--fin); }
+.track-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.track-actions .btn { font-size: 16px; padding: 8px 12px; }
+@media (max-width: 620px) {
+  .track { grid-template-columns: auto minmax(0, 1fr); }
+  .track-actions { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+/* stage picker */
+.stages { display: flex; flex-direction: column; gap: 8px; }
+.stg {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  width: 100%; text-align: left; border: 3px solid transparent; border-radius: 16px;
+  background: var(--sky-3); padding: 8px 12px 8px 8px;
+}
+.stg.on { border-color: var(--gold); }
+.stg-num {
+  width: 44px; height: 44px; border-radius: 12px; background: var(--sky);
+  display: grid; place-items: center; font-family: var(--font-display); font-size: 22px; color: var(--gold);
+}
+.stg.done .stg-num { background: var(--gold); color: var(--on-key); }
+.stg-title { font-family: var(--font-display); font-size: 17px; line-height: 1.25; display: block; }
+.stg-ex { font-size: 13px; color: var(--ink-dim); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stg-bar { display: block; height: 6px; border-radius: 3px; background: var(--sky); margin-top: 5px; overflow: hidden; }
+.stg-bar i { display: block; height: 100%; background: var(--cons); border-radius: 3px; }
+.stg-score { font-family: var(--font-display); font-size: 16px; color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.version { text-align: center; color: var(--ink-dim); font-size: 12px; opacity: .7; margin: 0; }
+
 .log-count { font-family: var(--font-display); color: var(--gold); }
 .treasures { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 8px; }
 .tr {
@@ -301,6 +350,18 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   <div class="layout">
     <main class="workshop">
       <section class="panel stage" aria-label="글자 만들기">
+        <div class="track" id="track" hidden>
+          <div class="track-emoji" id="tEmoji"></div>
+          <div>
+            <div class="track-top"><span class="track-stage" id="tStage"></span><span class="track-count" id="tCount"></span></div>
+            <div class="track-boxes" id="tBoxes"></div>
+          </div>
+          <div class="track-actions">
+            <button class="btn" id="hintBtn" type="button">💡 힌트</button>
+            <button class="btn" id="mSayBtn" type="button">🔊 들어 보기</button>
+            <button class="btn" id="quitBtn" type="button">✕ 그만</button>
+          </div>
+        </div>
         <div class="screen">
           <button id="screenBtn" type="button" aria-label="글자 소리 다시 듣기">
             <div id="big" class="big empty">아래 자음을 눌러 시작해요</div>
@@ -337,21 +398,10 @@ header { display: flex; align-items: center; justify-content: space-between; gap
     </main>
 
     <aside class="side">
-      <section class="panel" aria-label="오늘의 미션">
-        <h2>🚀 미션</h2>
-        <p class="sub">그림을 보고 글자를 만들어 봐요</p>
-        <div class="mission-card">
-          <div class="mission-emoji" id="mEmoji"></div>
-          <div>
-            <div class="mission-text" id="mText"></div>
-            <div class="mission-hint" id="mHint"></div>
-          </div>
-        </div>
-        <div class="mission-actions">
-          <button class="btn" id="hintBtn" type="button">💡 힌트</button>
-          <button class="btn" id="mSayBtn" type="button">🔊 들어 보기</button>
-          <button class="btn" id="skipBtn" type="button">다른 문제 ➜</button>
-        </div>
+      <section class="panel" aria-label="단계 미션">
+        <h2>🚀 단계 미션</h2>
+        <p class="sub">단계를 골라서 그림 속 낱말을 만들어 봐요</p>
+        <div class="stages" id="stages"></div>
       </section>
 
       <section class="panel" aria-label="보물 단어 도감">
@@ -361,6 +411,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
       </section>
     </aside>
   </div>
+  <p class="version">한글 탐험대 · 버전 4 (2026-10-23)</p>
 </div>
 
 <div class="cele" id="cele" hidden>
@@ -401,6 +452,15 @@ header { display: flex; align-items: center; justify-content: space-between; gap
     ['숲','🌳'],['활','🏹'],['굴','🦪'],['혀','👅']
   ];
   const TREASURE_MAP = Object.fromEntries(TREASURES);
+  // Stage missions, easiest first. Each word is typed one syllable at a time.
+  const STAGES = [
+    { title: '받침 없는 한 글자', words: [['코','👃'],['소','🐮'],['비','☔'],['차','🚗'],['이','🦷'],['오','5️⃣'],['사','4️⃣'],['구','9️⃣']] },
+    { title: '받침 있는 한 글자', words: [['돈','💰'],['강','🏞️'],['곰','🐻'],['별','⭐'],['달','🌙'],['눈','⛄'],['산','⛰️'],['물','💧'],['집','🏠'],['책','📚']] },
+    { title: '받침 없는 두 글자', words: [['나비','🦋'],['우유','🥛'],['오리','🦆'],['사자','🦁'],['여우','🦊'],['포도','🍇'],['바지','👖'],['모자','🧢'],['기차','🚂'],['하마','🦛']] },
+    { title: '받침 있는 두 글자', words: [['수박','🍉'],['사탕','🍬'],['가방','🎒'],['연필','✏️'],['우산','☂️'],['공룡','🦖'],['물건','📦'],['장갑','🧤'],['사람','🧑'],['하늘','🌤️']] },
+    { title: '쌍자음 · 어려운 모음', words: [['빵','🍞'],['꽃','🌸'],['개','🐶'],['토끼','🐰'],['사과','🍎'],['의자','🪑'],['과자','🍪'],['시계','⌚'],['돼지','🐷'],['새우','🦐']] },
+    { title: '세 글자', words: [['고양이','🐱'],['거북이','🐢'],['바나나','🍌'],['피아노','🎹'],['도토리','🌰'],['자동차','🚗'],['무지개','🌈'],['비행기','✈️'],['코끼리','🐘'],['원숭이','🐒']] }
+  ];
   const KEYMAP = {
     r:'ㄱ',s:'ㄴ',e:'ㄷ',f:'ㄹ',a:'ㅁ',q:'ㅂ',t:'ㅅ',d:'ㅇ',w:'ㅈ',c:'ㅊ',z:'ㅋ',x:'ㅌ',v:'ㅍ',g:'ㅎ',
     R:'ㄲ',E:'ㄸ',Q:'ㅃ',T:'ㅆ',W:'ㅉ',
@@ -423,6 +483,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   const made = new Set(store.get('made', []));
   const found = new Set(store.get('found', []));
   let showMore = store.get('more', false);
+  const cleared = new Set(store.get('cleared', []));
 
   // ---------- voice ----------
   const synth = window.speechSynthesis;
@@ -471,7 +532,8 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   // ---------- state ----------
   const st = { cho: null, jung: null, jong: null };
   let lastSyllable = null;
-  let mission = null, hintLevel = 0;
+  let mission = null, hintLevel = 0;   // mission = { stage, index, locked: [syllables done] }
+  let pendingClear = null;            // short pause before the builder empties after a syllable locks in
 
   const $ = id => document.getElementById(id);
 
@@ -518,16 +580,24 @@ header { display: flex; align-items: center; justify-content: space-between; gap
     render(guideHtml, true);
     if (isNew) spark($('starCount'), '⭐', 6);
 
-    const isMission = mission && syl === mission[0];
-    if (TREASURE_MAP[syl] || isMission) {
-      const first = !found.has(syl);
-      if (first) { found.add(syl); store.set('found', [...found]); renderTreasures(); }
-      setTimeout(() => { if (current() === syl) celebrate(syl, isMission, first); }, 650);
+    const first = TREASURE_MAP[syl] && !found.has(syl);
+    if (first) { found.add(syl); store.set('found', [...found]); renderTreasures(); }
+    if (mission) { checkMission(syl); return; }
+    if (TREASURE_MAP[syl]) {
+      setTimeout(() => {
+        if (current() !== syl) return;
+        celebrate({ emoji: TREASURE_MAP[syl], word: syl, tag: first ? '새 보물 발견!' : '보물 단어!',
+          msg: first ? '보물 도감에 넣어 두었어요.' : '이미 찾은 보물이에요. 또 만들었네요!', spark: '💎' });
+      }, 650);
     }
   }
 
   function backspace() {
-    if (st.jong) st.jong = null;
+    if (!st.cho && mission?.locked.length) {
+      // take the last finished syllable back into the workshop
+      Object.assign(st, decompose(mission.locked.pop()));
+      hintLevel = 0; renderTrack();
+    } else if (st.jong) st.jong = null;
     else if (st.jung) { st.jung = null; if (st.cho === 'ㅇ') st.cho = null; }
     else st.cho = null;
     blip(220);
@@ -536,6 +606,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
     render('하나 지웠어요.');
   }
   function reset() {
+    clearTimeout(pendingClear); pendingClear = null;
     Object.assign(st, { cho: null, jung: null, jong: null });
     synth?.cancel();
     render('');
@@ -568,7 +639,9 @@ header { display: flex; align-items: center; justify-content: space-between; gap
     $('formula').innerHTML = syl ? parts.join('<span class="op">+</span>') + `<span class="op">=</span><span>${syl}</span>` : parts.join('');
 
     $('guide').innerHTML = guideHtml ?? '';
-    if (!st.cho && !guideHtml) $('guide').innerHTML = '<b>ㄱ</b>을 누르고 <b>ㅏ</b>를 눌러 보세요. “가”가 돼요!';
+    if (!st.cho && !guideHtml) $('guide').innerHTML = mission
+      ? (mission.locked.length ? `이제 <b>${mission.locked.length + 1}번째 글자</b>를 만들어요!` : '그림을 보고 <b>첫 번째 글자</b>를 만들어 봐요!')
+      : '<b>ㄱ</b>을 누르고 <b>ㅏ</b>를 눌러 보세요. “가”가 돼요!';
 
     // when a syllable waits for a 받침, consonant keys turn pink
     const finMode = !!(st.jung && !st.jong);
@@ -579,7 +652,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 
     $('sayBtn').disabled = !st.cho;
     $('slowBtn').disabled = !syl;
-    $('backBtn').disabled = !st.cho;
+    $('backBtn').disabled = !st.cho && !mission?.locked.length;
     $('starCount').textContent = made.size;
     $('gemCount').textContent = found.size;
     lastSyllable = syl;
@@ -623,48 +696,129 @@ header { display: flex; align-items: center; justify-content: space-between; gap
     $('gemCount').textContent = found.size;
   }
 
-  // ---------- mission ----------
-  function newMission() {
-    const pool = TREASURES.filter(([w]) => !found.has(w) && (showMore || !needsMore(w)));
-    const list = pool.length ? pool : TREASURES.filter(([w]) => showMore || !needsMore(w));
-    let pick;
-    do { pick = list[Math.floor(Math.random() * list.length)]; } while (list.length > 1 && mission && pick[0] === mission[0]);
-    mission = pick; hintLevel = 0;
-    renderMission();
-  }
-  function needsMore(w) {
-    const d = decompose(w);
+  // ---------- stage missions ----------
+  const ckey = (si, w) => `${si}:${w}`;
+  const stageDone = si => STAGES[si].words.filter(([w]) => cleared.has(ckey(si, w))).length;
+  const curWord = () => STAGES[mission.stage].words[mission.index];
+  const target = () => [...curWord()[0]][mission.locked.length];
+  const needsMore = word => [...word].some(x => {
+    const d = decompose(x);
     return DOUBLE_CONS.includes(d.cho) || MORE_VOW.includes(d.jung) || (d.jong && !BASIC_CONS.includes(d.jong));
+  });
+
+  function startStage(si) {
+    const words = STAGES[si].words;
+    const i = words.findIndex(([w]) => !cleared.has(ckey(si, w)));
+    startWord(si, i < 0 ? 0 : i);
   }
-  function renderMission() {
-    const [w, e] = mission;
-    const d = decompose(w);
-    $('mEmoji').textContent = e;
-    $('mText').textContent = hintLevel >= (d.jong ? 3 : 2) ? `정답은 “${w}”!` : '이건 무슨 글자일까?';
-    const boxes = [['c', d.cho], ['v', d.jung]];
-    if (d.jong) boxes.push(['f', d.jong]);
-    $('mHint').innerHTML = boxes.map(([cls, ch], i) =>
-      `<div class="hbox ${i < hintLevel ? cls : ''}">${i < hintLevel ? ch : '?'}</div>`).join('');
-    $('hintBtn').disabled = hintLevel >= boxes.length;
+  function startWord(si, i) {
+    mission = { stage: si, index: i, locked: [] };
+    hintLevel = 0;
+    if (!showMore && needsMore(curWord()[0])) { showMore = true; store.set('more', true); buildKeys(); }
+    reset(); renderTrack(); renderStages();
+    blip(660); blip(880, 0.12, 'triangle', 0.08);
+    document.querySelector('.stage').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function quitMission() {
+    mission = null; hintLevel = 0;
+    reset(); renderTrack(); renderStages();
+  }
+
+  function checkMission(syl) {
+    const t = target(), want = decompose(t);
+    if (syl === t) {
+      mission.locked.push(syl);
+      hintLevel = 0;
+      renderTrack();
+      const word = curWord()[0];
+      if (mission.locked.length === [...word].length) { winWord(); return; }
+      render(`좋아요! <b>${syl}</b> 완성! 이제 다음 글자를 만들어요.`, true);
+      pendingClear = setTimeout(() => { pendingClear = null; Object.assign(st, { cho: null, jung: null, jong: null }); render(''); }, 700);
+    } else if (st.cho !== want.cho || st.jung !== want.jung || st.jong) {
+      blip(180, 0.25, 'sawtooth');
+      render('🤔 그림이랑 조금 달라요. <b>⬅ 지우기</b>를 눌러 다시 해 봐요!');
+    }
+  }
+  function flushPending() {
+    if (!pendingClear) return;
+    clearTimeout(pendingClear); pendingClear = null;
+    Object.assign(st, { cho: null, jung: null, jong: null });
+  }
+
+  function winWord() {
+    const si = mission.stage, [w, e] = curWord();
+    cleared.add(ckey(si, w)); store.set('cleared', [...cleared]);
+    renderStages();
+    const allDone = stageDone(si) === STAGES[si].words.length;
+    const stageEnd = mission.index === STAGES[si].words.length - 1;
+    render(`<b>${w}</b> 완성!`, true);
+    setTimeout(() => celebrate({
+      emoji: e, word: w,
+      tag: stageEnd ? `🏆 ${si + 1}단계 끝!` : '미션 성공!',
+      msg: stageEnd ? (allDone ? `${si + 1}단계를 모두 깼어요. 정말 대단해요!` : '마지막 문제까지 왔어요! 못 깬 문제는 다시 해 볼 수 있어요.') : '그림을 보고 낱말을 만들었어요!',
+      button: stageEnd ? '단계 고르기' : '다음 문제 ➜',
+      speak: [w, stageEnd && allDone ? `${si + 1}단계 클리어!` : '미션 성공!'],
+      spark: stageEnd ? '🏆' : '🚀',
+      then: stageEnd ? 'end' : 'next'
+    }), 600);
+  }
+
+  function renderTrack() {
+    if (!mission) { $('track').hidden = true; return; }
+    const si = mission.stage, words = STAGES[si].words, [w, e] = curWord();
+    $('track').hidden = false;
+    $('tEmoji').textContent = e;
+    $('tStage').textContent = `${si + 1}단계 · ${STAGES[si].title}`;
+    $('tCount').textContent = `${mission.index + 1} / ${words.length}번째 문제`;
+    const n = mission.locked.length;
+    $('tBoxes').innerHTML = [...w].map((x, i) => {
+      if (i < n) return `<div class="tbox done">${x}</div>`;
+      if (i > n) return `<div class="tbox">?</div>`;
+      const d = decompose(x);
+      const inner = hintLevel >= 2 ? `<span class="ghost">${x}</span>`
+        : hintLevel === 1 ? `<span class="parts"><span class="c">${d.cho}</span><span class="v">${d.jung}</span>${d.jong ? `<span class="f">${d.jong}</span>` : ''}</span>`
+        : '?';
+      return `<div class="tbox cur">${inner}</div>`;
+    }).join('');
+    $('hintBtn').disabled = hintLevel >= 2 || n >= [...w].length;
+  }
+
+  function renderStages() {
+    $('stages').replaceChildren(...STAGES.map((stg, si) => {
+      const done = stageDone(si), total = stg.words.length;
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = `stg${mission?.stage === si ? ' on' : ''}${done === total ? ' done' : ''}`;
+      b.innerHTML = `<span class="stg-num">${done === total ? '🏆' : si + 1}</span>
+        <span><span class="stg-title">${stg.title}</span>
+        <span class="stg-ex">${stg.words.slice(0, 4).map(([w, e]) => e + ' ' + w).join(' · ')}</span>
+        <span class="stg-bar"><i style="width:${Math.round(done / total * 100)}%"></i></span></span>
+        <span class="stg-score">${done}/${total}</span>`;
+      b.addEventListener('click', () => startStage(si));
+      return b;
+    }));
   }
 
   // ---------- celebration ----------
-  function celebrate(word, isMission, first) {
-    const emoji = TREASURE_MAP[word] || '✨';
-    $('celeTag').textContent = isMission ? '미션 성공!' : first ? '새 보물 발견!' : '보물 단어!';
+  let celeThen = null;
+  function celebrate({ emoji, word, tag, msg, button = '계속 탐험하기', speak, spark: sp = '💎', then = null }) {
+    $('celeTag').textContent = tag;
     $('celeEmoji').textContent = emoji;
     $('celeWord').textContent = word;
-    $('celeMsg').textContent = isMission ? '그림을 보고 글자를 만들었어요. 대단해요!' : first ? '보물 도감에 넣어 두었어요.' : '이미 찾은 보물이에요. 또 만들었네요!';
+    $('celeMsg').textContent = msg;
+    $('celeClose').textContent = button;
     $('cele').hidden = false;
+    celeThen = then;
     fanfare();
-    setTimeout(() => say(isMission ? [word, '미션 성공!'] : [word]), 250);
-    spark($('celeEmoji'), isMission ? '🚀' : '💎', 14);
+    setTimeout(() => say(speak || [word]), 250);
+    spark($('celeEmoji'), sp, 14);
     $('celeClose').focus();
-    if (isMission) $('cele').dataset.mission = '1';
   }
   function closeCele() {
     $('cele').hidden = true;
-    if ($('cele').dataset.mission) { delete $('cele').dataset.mission; newMission(); reset(); }
+    const then = celeThen; celeThen = null;
+    if (then === 'next') startWord(mission.stage, mission.index + 1);
+    else if (then === 'end') { quitMission(); document.getElementById('stages').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
   }
 
   function spark(anchor, ch, n) {
@@ -714,6 +868,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   // ---------- wiring ----------
   function onKey(ch) {
     if (!$('cele').hidden) closeCele();
+    flushPending();
     isVowel(ch) ? pressVowel(ch) : pressConsonant(ch);
     const k = document.querySelector(`.key[data-ch="${ch}"]`);
     if (k) { k.classList.add('hit'); setTimeout(() => k.classList.remove('hit'), 120); }
@@ -731,7 +886,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
       if (!showMore && (DOUBLE_CONS.includes(ch) || MORE_VOW.includes(ch))) { showMore = true; store.set('more', true); buildKeys(); }
       e.preventDefault(); onKey(ch); return;
     }
-    if (e.key === 'Backspace') { e.preventDefault(); if (st.cho) backspace(); }
+    if (e.key === 'Backspace') { e.preventDefault(); flushPending(); if (st.cho || mission?.locked.length) backspace(); }
     else if (e.key === 'Escape') reset();
     else if (e.key === ' ' && !e.target.closest('button, input')) { e.preventDefault(); replay(); }
   });
@@ -746,12 +901,12 @@ header { display: flex; align-items: center; justify-content: space-between; gap
     const parts = [st.cho === 'ㅇ' ? null : NAME[st.cho], NAME[st.jung], st.jong && NAME[st.jong]].filter(Boolean);
     say([...parts, lastSyllable], { rate: 0.7 });
   });
-  $('backBtn').addEventListener('click', backspace);
-  $('resetBtn').addEventListener('click', reset);
+  $('backBtn').addEventListener('click', () => { flushPending(); backspace(); });
+  $('resetBtn').addEventListener('click', () => { if (mission) { mission.locked = []; hintLevel = 0; renderTrack(); } reset(); });
   $('moreToggle').addEventListener('change', e => { showMore = e.target.checked; store.set('more', showMore); buildKeys(); render($('guide').innerHTML); });
-  $('hintBtn').addEventListener('click', () => { hintLevel++; blip(740); renderMission(); });
-  $('mSayBtn').addEventListener('click', () => say(mission[0]));
-  $('skipBtn').addEventListener('click', newMission);
+  $('hintBtn').addEventListener('click', () => { hintLevel++; blip(740); renderTrack(); });
+  $('mSayBtn').addEventListener('click', () => say(curWord()[0]));
+  $('quitBtn').addEventListener('click', quitMission);
   $('celeClose').addEventListener('click', closeCele);
   $('cele').addEventListener('click', e => { if (e.target.id === 'cele') closeCele(); });
 
@@ -762,7 +917,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   }
   buildKeys();
   renderTreasures();
-  newMission();
+  renderStages();
   render('');
   sky();
 })();

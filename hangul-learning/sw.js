@@ -1,6 +1,6 @@
 // Keeps 한글 탐험대 working with no internet after the first visit.
 // Bump VERSION whenever index.html changes so devices pick up the new copy.
-const VERSION = 'hangul-v3';
+const VERSION = 'hangul-v4';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
@@ -15,7 +15,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request)
+    // no-cache: skip the browser's HTTP cache so a new version shows up on the next open
+    fetch(e.request, { cache: 'no-cache' })
       .then(res => {
         if (res.ok && new URL(e.request.url).origin === location.origin) {
           const copy = res.clone();
