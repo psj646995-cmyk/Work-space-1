@@ -11,25 +11,47 @@ echo ============================================
 echo.
 echo [Step 1/3] Looking for Python...
 
-rem Each candidate is actually RUN, so the fake "python" shortcut
-rem from the Microsoft Store (which does nothing) is skipped.
+rem Each candidate is actually RUN. The fake "python" shortcut from the
+rem Microsoft Store (it only prints "Python" and does nothing) is skipped.
 set "PY="
-for %%C in ("py -3" "python" "python3") do (
-    if not defined PY (
-        set "OUT="
-        for /f "delims=" %%L in ('%%~C -c "print(4242+1)" 2^>nul') do set "OUT=%%L"
-        if "!OUT!"=="4243" (
-            set "PY=%%~C"
-            echo     %%~C ... OK
-        ) else (
-            echo     %%~C ... not usable
-        )
-    )
+echo     "where python" says:
+for /f "delims=" %%W in ('where python 2^>nul') do echo        %%W
+call :trycmd "py -3"
+call :trycmd "python"
+call :trycmd "python3"
+for /d %%D in ("%LocalAppData%\Programs\Python\Python3*" "%ProgramFiles%\Python3*" "%ProgramFiles(x86)%\Python3*" "%SystemDrive%\Python3*" "%UserProfile%\anaconda3" "%UserProfile%\miniconda3" "%LocalAppData%\anaconda3" "%ProgramData%\anaconda3" "%ProgramData%\miniconda3") do (
+    if exist "%%~D\python.exe" call :tryexe "%%~D\python.exe"
 )
+goto :afterfind
 
+:trycmd
+if defined PY goto :eof
+set "OUT="
+for /f "delims=" %%L in ('%~1 -c "print(4242+1)" 2^>nul') do set "OUT=%%L"
+if not "!OUT!"=="4243" goto :trycmd_no
+set "PY=%~1"
+echo     %~1 ... OK
+goto :eof
+:trycmd_no
+echo     %~1 ... not usable
+goto :eof
+
+:tryexe
+if defined PY goto :eof
+set "OUT="
+for /f "delims=" %%L in ('call "%~1" -c "print(4242+1)" 2^>nul') do set "OUT=%%L"
+if not "!OUT!"=="4243" goto :tryexe_no
+set "PY="%~1""
+echo     %~1 ... OK
+goto :eof
+:tryexe_no
+echo     %~1 ... not usable
+goto :eof
+
+:afterfind
 if not defined PY (
     echo.
-    echo [ERROR] No working Python was found on this computer.
+    echo [ERROR] No working Python was found ^(checked PATH and the usual install folders^).
     echo.
     echo  How to fix:
     echo   1. Go to https://www.python.org/downloads/ and install Python.
@@ -42,7 +64,7 @@ if not defined PY (
     echo   App execution aliases - turn OFF "python.exe" and "python3.exe".
     goto :done
 )
-for /f "delims=" %%V in ('!PY! --version 2^>^&1') do echo     Using: %%V
+for /f "delims=" %%V in ('call !PY! --version 2^>^&1') do echo     Using: %%V
 echo.
 
 echo [Step 2/3] Checking required packages...
