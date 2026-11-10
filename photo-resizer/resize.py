@@ -147,7 +147,37 @@ def unique_path(path: Path) -> Path:
         i += 1
 
 
+class Tee:
+    """화면에 출력하면서 같은 내용을 log.txt 에도 저장합니다."""
+
+    def __init__(self, stream, path: Path):
+        self.stream = stream
+        self.file = open(path, "w", encoding="utf-8")
+
+    def write(self, text):
+        self.stream.write(text)
+        self.stream.flush()
+        self.file.write(text)
+        self.file.flush()
+
+    def flush(self):
+        self.stream.flush()
+        self.file.flush()
+
+
 def main():
+    sys.stdout = Tee(sys.stdout, BASE / "log.txt")
+    sys.stderr = sys.stdout
+
+    import PIL
+
+    print("[점검] Python  :", sys.version.split()[0], f"({sys.executable})")
+    print("[점검] Pillow  :", PIL.__version__, "- OK")
+    print("[점검] HEIC 지원:", "OK" if HEIC_OK else "없음 (아이폰 HEIC 사진만 처리 못 함, 나머지는 정상)")
+    print("[점검] input 폴더 :", INPUT_DIR)
+    print("[점검] output 폴더:", OUTPUT_DIR)
+    print()
+
     INPUT_DIR.mkdir(exist_ok=True)
     OUTPUT_DIR.mkdir(exist_ok=True)
 
@@ -156,11 +186,14 @@ def main():
         if p.is_file() and not p.name.startswith(".") and p.name.lower() != "desktop.ini"
     )
     if not files:
-        print("input 폴더에 사진이 없습니다. 사진을 넣고 다시 실행해 주세요.")
+        print("[오류] input 폴더에 사진이 없습니다.")
+        print(f"       {INPUT_DIR}")
+        print("       위 폴더에 사진을 넣고 다시 실행해 주세요.")
         return
 
+    big = sum(1 for p in files if p.stat().st_size > LIMIT)
     copied = shrunk = failed = 0
-    print(f"총 {len(files)}개 파일 처리 시작\n")
+    print(f"총 {len(files)}개 파일 (5MB 초과 {big}개는 줄이고, 나머지 {len(files) - big}개는 그대로 복사)\n")
 
     for i, src in enumerate(files, 1):
         rel = src.relative_to(INPUT_DIR)
@@ -186,6 +219,7 @@ def main():
                 failed += 1
                 continue
 
+            print(f"{prefix}  {human(size)}  -> 줄이는 중...", flush=True)
             data, q, new_dim, old_dim = compress(src)
             if src.suffix.lower() in (".jpg", ".jpeg"):
                 dst = OUTPUT_DIR / rel  # 원래 파일 이름 그대로
@@ -197,10 +231,10 @@ def main():
             shutil.copystat(src, dst)  # 파일 날짜 유지
 
             resized = "" if new_dim == old_dim else f", 해상도 {old_dim[0]}x{old_dim[1]} -> {new_dim[0]}x{new_dim[1]}"
-            print(f"{prefix}  {human(size)} -> {human(len(data))}  (품질 {q}{resized})")
+            print(f"{prefix}  {human(size)} -> {human(len(data))}  완료 (품질 {q}{resized})")
             shrunk += 1
         except Exception as e:
-            print(f"{prefix}  -> 오류: {e}")
+            print(f"{prefix}  -> [오류] {type(e).__name__}: {e}")
             failed += 1
 
     print("\n==========================================")
@@ -209,8 +243,16 @@ def main():
     if failed:
         print(f" 실패/건너뜀: {failed}개 (위 목록 확인)")
     print(f" 결과 폴더:   {OUTPUT_DIR}")
+    print(f" 기록 파일:   {BASE / 'log.txt'}")
     print("==========================================")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        import traceback
+
+        print("\n[오류] 예상치 못한 문제로 멈췄습니다. 아래 내용을 그대로 알려주세요:\n")
+        traceback.print_exc(file=sys.stdout)
+        sys.exit(1)

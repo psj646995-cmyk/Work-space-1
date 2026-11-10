@@ -3,3 +3,4 @@ input/*
 output/*
 !output/.gitkeep
 __pycache__/
+log.txt
