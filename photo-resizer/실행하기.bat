@@ -4,25 +4,35 @@ setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 
 echo ============================================
-echo  Photo resizer: shrink photos over 5MB
+echo  [C] Photo resizer: shrink photos over 5MB
 echo  input  folder : put your photos here
 echo  output folder : results appear here
 echo ============================================
 echo.
-echo [Step 1/3] Looking for Python...
-
+echo [Step 1] Looking for Python...
 rem Each candidate is actually RUN. The fake "python" shortcut from the
 rem Microsoft Store (it only prints "Python" and does nothing) is skipped.
 set "PY="
-echo     "where python" says:
-for /f "delims=" %%W in ('where python 2^>nul') do echo        %%W
 call :trycmd "py -3"
 call :trycmd "python"
 call :trycmd "python3"
 for /d %%D in ("%LocalAppData%\Programs\Python\Python3*" "%ProgramFiles%\Python3*" "%ProgramFiles(x86)%\Python3*" "%SystemDrive%\Python3*" "%UserProfile%\anaconda3" "%UserProfile%\miniconda3" "%LocalAppData%\anaconda3" "%ProgramData%\anaconda3" "%ProgramData%\miniconda3") do (
     if exist "%%~D\python.exe" call :tryexe "%%~D\python.exe"
 )
-goto :afterfind
+if defined PY goto :havepy
+echo.
+echo [ERROR] No working Python was found ^(checked PATH and the usual install folders^).
+echo.
+echo  How to fix:
+echo   1. Go to https://www.python.org/downloads/ and install Python.
+echo   2. On the FIRST install screen, check the box
+echo      "Add python.exe to PATH" before clicking Install.
+echo   3. Close this window and double-click this file again.
+echo.
+echo  If Python is already installed and you still see this:
+echo   Windows Settings - Apps - Advanced app settings -
+echo   App execution aliases - turn OFF "python.exe" and "python3.exe".
+goto :done
 
 :trycmd
 if defined PY goto :eof
@@ -48,46 +58,28 @@ goto :eof
 echo     %~1 ... not usable
 goto :eof
 
-:afterfind
-if not defined PY (
-    echo.
-    echo [ERROR] No working Python was found ^(checked PATH and the usual install folders^).
-    echo.
-    echo  How to fix:
-    echo   1. Go to https://www.python.org/downloads/ and install Python.
-    echo   2. On the FIRST install screen, check the box
-    echo      "Add python.exe to PATH" before clicking Install.
-    echo   3. Close this window and double-click this file again.
-    echo.
-    echo  If Python is already installed and you still see this:
-    echo   Windows Settings - Apps - Advanced app settings -
-    echo   App execution aliases - turn OFF "python.exe" and "python3.exe".
-    goto :done
-)
+:havepy
 for /f "delims=" %%V in ('call !PY! --version 2^>^&1') do echo     Using: %%V
 echo.
-
-echo [Step 2/3] Checking required packages...
+echo [Step 2] Checking required packages...
 !PY! -c "import PIL" >nul 2>nul
 if errorlevel 1 (
     echo     Pillow ... missing, installing now. Please wait...
-    !PY! -m pip install pillow
+    !PY! -m pip install --disable-pip-version-check pillow
     !PY! -c "import PIL" >nul 2>nul
     if errorlevel 1 (
         echo.
         echo [ERROR] Could not install Pillow ^(the image library^).
         echo  See the pip messages above for the reason.
-        echo  Common causes: no internet connection, or pip missing.
-        echo  Try running this in a Command Prompt:  !PY! -m pip install pillow
+        echo  Common cause: no internet connection.
         goto :done
     )
 )
 echo     Pillow ... OK
-
 !PY! -c "import pillow_heif" >nul 2>nul
 if errorlevel 1 (
     echo     pillow-heif ^(iPhone HEIC photos^) ... missing, installing now...
-    !PY! -m pip install pillow-heif
+    !PY! -m pip install --disable-pip-version-check pillow-heif
     !PY! -c "import pillow_heif" >nul 2>nul
     if errorlevel 1 (
         echo     [WARNING] pillow-heif could not be installed.
@@ -99,14 +91,10 @@ if errorlevel 1 (
     echo     pillow-heif ... OK
 )
 echo.
-
-echo [Step 3/3] Processing photos...
+echo [Step 3] Processing photos...
 echo.
 !PY! -X utf8 resize.py
-if errorlevel 1 (
-    echo.
-    echo [ERROR] The resizer stopped with an error. See the messages above.
-)
+if errorlevel 1 echo [ERROR] The resizer stopped with an error. See the messages above.
 
 :done
 echo.
