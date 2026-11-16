@@ -335,6 +335,30 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   .layout { grid-template-columns: minmax(0, 1fr) 300px; }
   .keygrid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
 }
+
+/* voice settings */
+.voice-card { max-width: 520px; text-align: left; align-items: stretch; }
+.voice-intro { margin: 0; font-size: 15px; opacity: .85; }
+.voice-list { display: flex; flex-direction: column; gap: 6px; max-height: 42vh; overflow-y: auto; }
+.voice-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 12px; border: 2px solid transparent; background: rgba(0,0,0,.18); }
+.voice-row.on { border-color: currentColor; }
+.voice-row label { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; cursor: pointer; min-width: 0; }
+.voice-row input { width: 20px; height: 20px; flex: none; }
+.vname { font-size: 16px; overflow-wrap: anywhere; }
+.vtag { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: rgba(255,255,255,.12); white-space: nowrap; }
+.vtag.best { background: #f7d36b; color: #1d2a22; }
+.vtest { flex: none; border: 2px solid rgba(255,255,255,.4); background: transparent; border-radius: 10px; padding: 4px 10px; font-size: 15px; }
+.voice-none { margin: 0; }
+.voice-speed { display: flex; align-items: center; gap: 10px; font-size: 16px; }
+.voice-speed input { flex: 1; }
+.voice-tips { font-size: 14px; opacity: .9; }
+.voice-tips summary { cursor: pointer; font-size: 15px; }
+.voice-tips ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+button.pill { cursor: pointer; color: var(--ink); }
+.voice-card .vtest { color: var(--ink); }
+.voice-row.on { color: var(--gold); }
+.voice-row .vname { color: var(--ink); }
+.voice-card { gap: 10px; display: flex; flex-direction: column; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -363,6 +387,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
       </div>
     </div>
     <div class="score">
+      <button class="pill" id="voiceBtn" type="button" title="목소리 설정"><span class="ic">🔊</span><small style="font-size:16px">목소리</small></button>
       <div class="pill" title="지금까지 만든 서로 다른 글자 수"><span class="ic">⭐</span><span id="starCount">0</span><small style="font-size:14px;color:var(--ink-dim)">글자</small></div>
       <div class="pill" title="찾은 보물 단어 수"><span class="ic">💎</span><span id="gemCount">0</span><small style="font-size:14px;color:var(--ink-dim)">보물</small></div>
     </div>
@@ -435,7 +460,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
       </section>
     </aside>
   </div>
-  <p class="version">한글 탐험대 · 버전 5 (2026-10-23)</p>
+  <p class="version">한글 탐험대 · 버전 6 (2026-11-16)</p>
 </div>
 
 <div class="cele" id="cele" hidden>
@@ -445,6 +470,23 @@ header { display: flex; align-items: center; justify-content: space-between; gap
     <div class="cele-word" id="celeWord"></div>
     <p class="cele-msg" id="celeMsg"></p>
     <button class="btn primary" id="celeClose" type="button">계속 탐험하기</button>
+  </div>
+</div>
+
+<div class="cele" id="voiceBox" hidden>
+  <div class="cele-card voice-card" role="dialog" aria-modal="true" aria-labelledby="voiceHead">
+    <div class="cele-tag" id="voiceHead">🔊 목소리 설정</div>
+    <p class="voice-intro">이 기기에 있는 한국어 목소리예요. 들어 보고 가장 자연스러운 걸 고르세요. 맨 위가 보통 가장 자연스러워요.</p>
+    <div class="voice-list" id="voiceList"></div>
+    <label class="voice-speed">빠르기 <input type="range" id="voiceRate" min="0.6" max="1.1" step="0.05"> <output id="voiceRateOut"></output></label>
+    <details class="voice-tips"><summary>더 자연스러운 목소리 받는 법</summary>
+      <ul>
+        <li><b>아이폰·아이패드</b>: 설정 → 손쉬운 사용 → 읽기 및 말하기(음성 콘텐츠) → 음성 → 한국어 → <b>유나(향상됨 또는 프리미엄)</b> 다운로드</li>
+        <li><b>윈도우 노트북</b>: <b>마이크로소프트 엣지</b>로 열면 “SunHi Online (Natural)” 같은 아주 자연스러운 목소리가 나와요 (인터넷 필요)</li>
+        <li><b>안드로이드·크롬</b>: “Google 한국의” 목소리가 자연스러워요 (인터넷 필요)</li>
+      </ul>
+    </details>
+    <button class="btn primary" id="voiceClose" type="button">닫기</button>
   </div>
 </div>
 
@@ -482,6 +524,8 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 
 <script>
 (() => {
+  const $ = id => document.getElementById(id);
+
   // ---------- 한글 data ----------
   const CHO = [...'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'];
   const JUNG = [...'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'];
@@ -541,31 +585,85 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   let showMore = store.get('more', false);
   const cleared = new Set(store.get('cleared', []));
 
+  const VT = { best: '추천', offline: '인터넷 없이 됨', online: '인터넷 필요', test: '▶ 들어 보기',
+    sample: '안녕하세요. 가, 나, 다, 아, 어, 오.', none: '이 기기에는 한국어 목소리가 없어요. 아래 방법으로 추가해 주세요.' };
   // ---------- voice ----------
+  // Speech comes from the device's own Korean voices. They differ a lot in quality, so the most
+  // natural one is chosen first (neural/online voices), with an offline voice as the fallback.
   const synth = window.speechSynthesis;
-  let koVoice = null;
+  let koVoices = [], koVoice = null;
+  let voicePref = store.get('voice', null);   // voiceURI picked in the voice settings
+  let voiceRate = store.get('rate', 0.85);
+  function voiceScore(v) {
+    const n = v.name;
+    if (/natural|neural/i.test(n)) return 100;              // Microsoft Edge: SunHi / InJoon Online (Natural)
+    if (/google/i.test(n)) return 90;                        // Chrome and Android: Google 한국의
+    if (/premium|프리미엄/i.test(n)) return 85;              // Apple downloadable voices
+    if (/enhanced|향상/i.test(n)) return 80;
+    if (/online/i.test(n)) return 70;
+    if (/yuna|유나|sora|minsu|jian|suhyun|heami/i.test(n)) return 50;
+    return v.localService ? 30 : 40;
+  }
+  const usable = v => v.localService || navigator.onLine !== false;   // online voices need the internet
   function pickVoice() {
     if (!synth) return;
-    const vs = synth.getVoices();
-    // voices built into the computer work offline; online ones (e.g. Chrome's Google voice) do not
-    const ko = vs.filter(v => /^ko/i.test(v.lang));
-    koVoice = ko.find(v => v.localService) || ko[0] || null;
+    koVoices = synth.getVoices().filter(v => /^ko/i.test(v.lang)).sort((a, b) => voiceScore(b) - voiceScore(a));
+    koVoice = koVoices.find(v => v.voiceURI === voicePref && usable(v)) || koVoices.find(usable) || null;
+    if (!$('voiceBox').hidden) renderVoices();
   }
   if (synth) {
     pickVoice();
     synth.addEventListener?.('voiceschanged', pickVoice);
     setTimeout(() => { pickVoice(); if (!koVoice) $('voiceNotice').hidden = false; }, 1800);
   }
-  function say(texts, { rate = 0.85 } = {}) {
-    if (!synth) { $('voiceNotice').hidden = false; return; }
-    if (synth.speaking || synth.pending) synth.cancel();
-    [].concat(texts).forEach(t => {
-      const u = new SpeechSynthesisUtterance(t);
-      u.lang = 'ko-KR'; u.rate = rate; u.pitch = 1.1;
-      if (koVoice) u.voice = koVoice;
-      synth.speak(u);
-    });
+  function speakOne(t, rate, voice, retry) {
+    // a lone syllable ends with a full stop so the voice says it with a natural falling tone
+    const u = new SpeechSynthesisUtterance(/^[가-힣]$/.test(t) ? t + '.' : t);
+    u.lang = 'ko-KR'; u.rate = rate;
+    if (voice) u.voice = voice;
+    // an online voice can fail when the connection drops: say it again with an offline voice
+    u.onerror = e => {
+      if (retry || !voice || voice.localService || /interrupted|canceled/.test(e.error)) return;
+      const local = koVoices.find(v => v.localService);
+      if (local) speakOne(t, rate, local, true);
+    };
+    synth.speak(u);
   }
+  function say(texts, { slow = false, voice } = {}) {
+    if (!synth) { $('voiceNotice').hidden = false; return; }
+    if (synth.speaking || synth.pending) synth.cancel();   // iOS drops an utterance spoken right after an idle cancel()
+    if (!voice) pickVoice();
+    const rate = slow ? Math.max(0.5, voiceRate * 0.8) : voiceRate;
+    [].concat(texts).forEach(t => speakOne(t, rate, voice || koVoice));
+  }
+
+  function renderVoices() {
+    const list = $('voiceList');
+    if (!koVoices.length) { list.innerHTML = `<p class="voice-none">${VT.none}</p>`; return; }
+    list.replaceChildren(...koVoices.map((v, i) => {
+      const row = document.createElement('div');
+      row.className = 'voice-row' + (v === koVoice ? ' on' : '');
+      const tags = [i === 0 ? VT.best : '', v.localService ? VT.offline : VT.online].filter(Boolean)
+        .map((t, k) => `<span class="vtag${k === 0 && i === 0 ? ' best' : ''}">${t}</span>`).join('');
+      row.innerHTML = `<label><input type="radio" name="voicePick" ${v === koVoice ? 'checked' : ''}><span class="vname">${v.name}</span>${tags}</label>
+        <button class="vtest" type="button">${VT.test}</button>`;
+      row.querySelector('input').addEventListener('change', () => { voicePref = v.voiceURI; store.set('voice', voicePref); pickVoice(); renderVoices(); say(VT.sample); });
+      row.querySelector('.vtest').addEventListener('click', () => say(VT.sample, { voice: v }));
+      return row;
+    }));
+  }
+  function openVoices() {
+    pickVoice();
+    $('voiceRate').value = voiceRate;
+    $('voiceRateOut').textContent = voiceRate.toFixed(2);
+    renderVoices();
+    $('voiceBox').hidden = false;
+  }
+  $('voiceBtn').addEventListener('click', openVoices);
+  $('voiceClose').addEventListener('click', () => { $('voiceBox').hidden = true; });
+  $('voiceBox').addEventListener('click', e => { if (e.target.id === 'voiceBox') $('voiceBox').hidden = true; });
+  $('voiceRate').addEventListener('input', e => { voiceRate = +e.target.value; $('voiceRateOut').textContent = voiceRate.toFixed(2); store.set('rate', voiceRate); });
+  $('voiceRate').addEventListener('change', () => say(VT.sample));
 
   // ---------- little sound effects ----------
   let actx = null;
@@ -591,7 +689,6 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   let mission = null, hintLevel = 0;   // mission = { stage, index, locked: [syllables done] }
   let pendingClear = null;            // short pause before the builder empties after a syllable locks in
 
-  const $ = id => document.getElementById(id);
 
   function current() { return st.cho && st.jung ? compose(st.cho, st.jung, st.jong) : null; }
 
@@ -1025,7 +1122,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
     if (token !== mouthToken || fast) return;
     // finish by saying the whole syllable while the mouth runs through it quickly
     $('mouthTip').innerHTML = `이제 이어서 <b>${lastSyllable || st.cho}</b>!`;
-    say(lastSyllable || NAME[st.cho], { rate: .7 });
+    say(lastSyllable || NAME[st.cho], { slow: true });
     await playMouth(true);
   }
   function openMouth() {
@@ -1095,6 +1192,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   document.addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     if (!$('cele').hidden && (e.key === 'Escape' || e.key === 'Enter')) { e.preventDefault(); closeCele(); return; }
+    if (!$('voiceBox').hidden) { if (e.key === 'Escape') $('voiceBox').hidden = true; return; }
     if (!$('mouthBox').hidden) { if (e.key === 'Escape') closeMouth(); return; }
     // accept both English-layout keys and Korean IME characters
     const ch = KEYMAP[e.key] || (NAME[e.key] ? e.key : null);
@@ -1115,7 +1213,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
   $('slowBtn').addEventListener('click', () => {
     if (!lastSyllable) return;
     const parts = [st.cho === 'ㅇ' ? null : NAME[st.cho], NAME[st.jung], st.jong && NAME[st.jong]].filter(Boolean);
-    say([...parts, lastSyllable], { rate: 0.7 });
+    say([...parts, lastSyllable], { slow: true });
   });
   $('backBtn').addEventListener('click', () => { flushPending(); backspace(); });
   $('mouthBtn').addEventListener('click', openMouth);
