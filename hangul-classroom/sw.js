@@ -1,6 +1,6 @@
 // Keeps Hangeul Classroom working with no internet after the first visit.
 // Bump VERSION whenever index.html changes so devices pick up the new copy.
-const VERSION = 'hgclass-v5';
+const VERSION = 'hgclass-v6';
 const FILES = ['./', 'index.html', 'manifest.webmanifest', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {

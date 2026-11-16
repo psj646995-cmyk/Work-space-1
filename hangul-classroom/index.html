@@ -547,7 +547,7 @@ h2.chalk small { font-family: var(--font-ko); font-size: 16px; color: var(--chal
     </section>
   </div>
   <div class="tray" aria-hidden="true"></div>
-  <p class="version">Hangeul Classroom · version 5 (2026-11-16)</p>
+  <p class="version">Hangeul Classroom · version 6 (2026-11-16)</p>
 </div>
 
 <!-- word / spelling celebration -->
@@ -941,24 +941,28 @@ h2.chalk small { font-family: var(--font-ko); font-size: 16px; color: var(--chal
     player.play().catch(() => {});
   }, { capture: true });
 
-  let playToken = 0;
+  let playToken = 0, endClip = null;
   function playClip(b64, rate) {
+    endClip?.();   // let a clip that was cut off by a newer tap finish its wait
     return new Promise(res => {
-      player.onended = player.onerror = () => res();
+      endClip = () => { endClip = null; res(); };
+      player.onended = player.onerror = endClip;
       player.src = 'data:audio/mpeg;base64,' + b64;
-      player.playbackRate = rate;
-      player.play().catch(() => res());
+      // a new src resets the speed to defaultPlaybackRate, so set both after it
+      player.defaultPlaybackRate = player.playbackRate = rate;
+      player.play().catch(endClip);
     });
   }
   function say(texts, { slow = false } = {}) {
     const token = ++playToken;
-    player.pause();
+    player.pause(); endClip?.();
     if (synth && (synth.speaking || synth.pending)) synth.cancel();
     const list = [].concat(texts).filter(Boolean);
     (async () => {
       for (let i = 0; i < list.length; i++) {
+        // checked word recordings first (집, 책 …), then the syllable packs
         const [pack, key] = clipRef(list[i]);
-        const b64 = pack && (await loadPack(pack))[key];
+        const b64 = (await loadPack('lex'))[list[i]] || (pack && (await loadPack(pack))[key]);
         if (token !== playToken) return;
         if (b64) await playClip(b64, slow ? 0.8 : 1);
         else await sayDevice(list[i], slow);
