@@ -37,6 +37,8 @@ send a screenshot of a MERA Facebook post. Follow "Screenshot update" below for 
      search Nominatim with curl (`https://nominatim.openstreetmap.org/search?q=...&format=jsonv2`, with a
      User-Agent and at most 1 request per second). Use `"added": "<source>"`. If you can't place it reliably
      within ~150 m, don't add it. Mention it in the notice instead.
+   - Don't set `area` by hand. `build_data.py` works out each station's Lilongwe "Area N" from the official
+     boundaries in `data/areas.json` (OCHA), and the page's Area search uses it.
    - `notices.json`: add one notice per relevant source (newest info first is handled by the build).
      Use `stations` to list the station ids it affects.
    - `meta.json`: set `lastCheck` to now (+02:00) and `lastResult` (ko/en, one sentence: what was checked and

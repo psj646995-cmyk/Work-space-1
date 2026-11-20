@@ -14,6 +14,7 @@ are added from screenshots.
 |---|---|
 | `site/index.src.html` | Page source (edit this) → `tools/build_page.py` → `site/index.html` |
 | `site/basemap.json` | Roads, water, parks and labels drawn on the map (OpenStreetMap via OpenFreeMap) |
+| `data/areas.json` | Official Lilongwe City Area 1–58 boundaries (OCHA COD-AB), used for Area search |
 | `data/*.json` | Stations, statuses, notices, run info → `tools/build_data.py` validates → `site/data.json` |
 | `tools/fetch_sources.py` | Collects new fuel posts from MERA and news sites |
 | `AUTOMATION.md` | Step-by-step runbook each automatic run follows |
