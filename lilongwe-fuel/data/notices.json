@@ -1,0 +1,47 @@
+[
+ {
+  "id": "2026-11-18-diesel-imports",
+  "at": "2026-11-18T07:30:00+02:00",
+  "source": "news",
+  "url": "https://mwnation.com/mera-liberalises-diesel-imports-earns-applause/",
+  "title": {
+   "ko": "MERA, 대량 사용자의 경유 직접 수입 허용",
+   "en": "MERA lets large users import their own diesel"
+  },
+  "summary": {
+   "ko": "MERA가 2027년 1월 31일까지 광업·건설·농업 등 대량 사용자가 경유를 직접 수입하도록 허용했습니다. 주유소의 경유 수요가 줄어들 것으로 기대됩니다.",
+   "en": "MERA is allowing large users such as mining, construction and agriculture to import diesel themselves until 31 January 2027, which is expected to ease demand at filling stations."
+  },
+  "stations": []
+ },
+ {
+  "id": "2026-11-18-no-end-date",
+  "at": "2026-11-18T01:56:00+02:00",
+  "source": "news",
+  "url": "https://www.nyasatimes.com/fuel-crisis-has-no-end-date-namalomba-admits/",
+  "title": {
+   "ko": "정부, 새 연료 공급 날짜 제시 못 해",
+   "en": "Government gives no date for new fuel deliveries"
+  },
+  "summary": {
+   "ko": "정부 대변인은 연료 구매 자금 3천만 달러가 집행됐고 1억 리터를 추가 구매했다고 밝혔지만, 도착 날짜는 말하지 않았습니다. 새 주유소 배송 예정표도 나오지 않았습니다.",
+   "en": "The government spokesperson said US$30 million was released and an extra 100 million litres bought, but gave no arrival date. No new station delivery schedule has been published."
+  },
+  "stations": []
+ },
+ {
+  "id": "2026-11-09-mera-chinsapo",
+  "at": "2026-11-09T22:54:00+02:00",
+  "source": "mera",
+  "url": "https://www.nyasatimes.com/mera-shuts-mount-meru-chinsapo-pumps-over-hoarded-petrol-and-favouritism-claims/",
+  "title": {
+   "ko": "MERA, 친사포 Mount Meru 주유소 영업정지",
+   "en": "MERA suspends Mount Meru Chinsapo"
+  },
+  "summary": {
+   "ko": "MERA는 휘발유 1,000리터를 특정 고객용으로 빼돌린 혐의로 친사포의 Mount Meru 주유소 영업을 즉시 정지했습니다. 신고: 무료 4259, WhatsApp 0987009711.",
+   "en": "MERA suspended the Mount Meru station in Chinsapo with immediate effect for allegedly holding back 1,000 litres of petrol for favoured customers. Report abuse: toll-free 4259, WhatsApp 0987009711."
+  },
+  "stations": []
+ }
+]

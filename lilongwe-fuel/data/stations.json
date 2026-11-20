@@ -1,0 +1,719 @@
+[
+ {
+  "id": "bp-mango-link",
+  "name": "BP · Mango Link",
+  "brand": "BP",
+  "road": "Mango Link",
+  "lat": -13.95921,
+  "lon": 33.79316,
+  "aliases": [
+   "BP"
+  ],
+  "osm": [
+   "w278165165"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "best-oil-13-92633-748",
+  "name": "Best Oil",
+  "brand": "Best Oil",
+  "road": null,
+  "lat": -13.92628,
+  "lon": 33.74834,
+  "aliases": [
+   "Best Oil Filling Station"
+  ],
+  "osm": [],
+  "added": "osm"
+ },
+ {
+  "id": "energem-m1",
+  "name": "Energem · M1",
+  "brand": "Energem",
+  "road": "M1",
+  "lat": -14.01734,
+  "lon": 33.78739,
+  "aliases": [
+   "Energm"
+  ],
+  "osm": [
+   "n2964012609"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "energem-m12",
+  "name": "Energem · M12",
+  "brand": "Energem",
+  "road": "M12",
+  "lat": -13.97845,
+  "lon": 33.70207,
+  "aliases": [
+   "Energem"
+  ],
+  "osm": [
+   "n5849409887"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "energem-s124",
+  "name": "Energem · S124",
+  "brand": "Energem",
+  "road": "S124",
+  "lat": -14.02613,
+  "lon": 33.71284,
+  "aliases": [
+   "Energem"
+  ],
+  "osm": [
+   "n4875432169"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "engen-malangalanga",
+  "name": "Engen · Malangalanga",
+  "brand": "Engen",
+  "road": "Malangalanga",
+  "lat": -13.99355,
+  "lon": 33.77638,
+  "aliases": [
+   "Engen"
+  ],
+  "osm": [
+   "n3089041136"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "engen-murray-road",
+  "name": "Engen · Murray Road",
+  "brand": "Engen",
+  "road": "Murray Road",
+  "lat": -13.98507,
+  "lon": 33.77099,
+  "aliases": [
+   "Engen"
+  ],
+  "osm": [
+   "n5901711485"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "mount-meru-african-unity-road",
+  "name": "Mount Meru · African Unity Road",
+  "brand": "Mount Meru",
+  "road": "African Unity Road",
+  "lat": -13.97253,
+  "lon": 33.79765,
+  "aliases": [
+   "MT MEERU"
+  ],
+  "osm": [
+   "n2501062604"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "mount-meru-m1",
+  "name": "Mount Meru · Area 38",
+  "brand": "Mount Meru",
+  "road": "M1",
+  "lat": -14.06141,
+  "lon": 33.80335,
+  "aliases": [
+   "Mt MERU"
+  ],
+  "osm": [
+   "n5949266685",
+   "w832905001"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "mount-meru-kaunda-road",
+  "name": "Mount Meru · Kaunda Road",
+  "brand": "Mount Meru",
+  "road": "Kaunda Road",
+  "lat": -13.90201,
+  "lon": 33.75126,
+  "aliases": [
+   "meru filling station"
+  ],
+  "osm": [
+   "n11324758269"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "petroda-13-96333-762",
+  "name": "Petroda · Area 47",
+  "brand": "Petroda",
+  "road": null,
+  "lat": -13.9627,
+  "lon": 33.76194,
+  "aliases": [
+   "Petroda"
+  ],
+  "osm": [],
+  "added": "osm"
+ },
+ {
+  "id": "petroda-kenyatta-road",
+  "name": "Petroda · Kenyatta Road",
+  "brand": "Petroda",
+  "road": "Kenyatta Road",
+  "lat": -13.97588,
+  "lon": 33.77849,
+  "aliases": [
+   "Petroda"
+  ],
+  "osm": [
+   "n1731876328"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "petroda-m1",
+  "name": "Petroda · M1",
+  "brand": "Petroda",
+  "road": "M1",
+  "lat": -14.0608,
+  "lon": 33.80191,
+  "aliases": [
+   "Petroda"
+  ],
+  "osm": [
+   "n4456207097"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "petroda-m1-2",
+  "name": "Petroda · M1",
+  "brand": "Petroda",
+  "road": "M1",
+  "lat": -14.01063,
+  "lon": 33.78744,
+  "aliases": [
+   "Petroda"
+  ],
+  "osm": [
+   "w908793973",
+   "n3008998907"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "petroda-m14",
+  "name": "Petroda · M14",
+  "brand": "Petroda",
+  "road": "M14",
+  "lat": -13.90165,
+  "lon": 33.7929,
+  "aliases": [
+   "Petroda"
+  ],
+  "osm": [
+   "n2501063525"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "petroda-queens-road",
+  "name": "Petroda · Queens Road",
+  "brand": "Petroda",
+  "road": "Queens Road",
+  "lat": -13.97402,
+  "lon": 33.75078,
+  "aliases": [
+   "Petroda"
+  ],
+  "osm": [
+   "w399075350",
+   "n2405523479"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "petroda-ufulu",
+  "name": "Petroda · Ufulu",
+  "brand": "Petroda",
+  "road": "Ufulu",
+  "lat": -13.9268,
+  "lon": 33.7884,
+  "aliases": [
+   "Petroda"
+  ],
+  "osm": [
+   "n2501724414"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-m1-3",
+  "name": "Puma Area 18",
+  "brand": "Puma",
+  "road": "M1",
+  "lat": -13.94407,
+  "lon": 33.77964,
+  "aliases": [
+   "Area 18 Puma Gas Station"
+  ],
+  "osm": [
+   "w821203998",
+   "n3134932270"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-m12-2",
+  "name": "Puma Kaunda Road",
+  "brand": "Puma",
+  "road": "M12",
+  "lat": -13.97437,
+  "lon": 33.74043,
+  "aliases": [
+   "Kaunda Puma"
+  ],
+  "osm": [
+   "n1783147527"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-kamuzu-procession-road",
+  "name": "Puma Maula",
+  "brand": "Puma",
+  "road": "Kamuzu Procession Road",
+  "lat": -13.98321,
+  "lon": 33.76516,
+  "aliases": [
+   "Maula Filling Station",
+   "Puma - Maula Filling Station"
+  ],
+  "osm": [
+   "n902447587",
+   "n2502536877"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-m1-4",
+  "name": "Puma Kanengo",
+  "brand": "Puma",
+  "road": "M1",
+  "lat": -13.89396,
+  "lon": 33.79271,
+  "aliases": [
+   "Puma Kanengo"
+  ],
+  "osm": [
+   "n2500841517"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-civic-drive",
+  "name": "Puma · Civic Drive",
+  "brand": "Puma",
+  "road": "Civic Drive",
+  "lat": -13.95721,
+  "lon": 33.79062,
+  "aliases": [
+   "Puma"
+  ],
+  "osm": [
+   "n1731979488"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-kamuzu-procession-road-2",
+  "name": "Puma · Kamuzu Procession Road",
+  "brand": "Puma",
+  "road": "Kamuzu Procession Road",
+  "lat": -13.97496,
+  "lon": 33.75698,
+  "aliases": [
+   "Puma Filling Station"
+  ],
+  "osm": [
+   "n324600490"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-m1",
+  "name": "Puma · M1",
+  "brand": "Puma",
+  "road": "M1",
+  "lat": -14.0588,
+  "lon": 33.80109,
+  "aliases": [
+   "Puma"
+  ],
+  "osm": [
+   "w447412832",
+   "n3008999061"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-m1-2",
+  "name": "Puma · M1",
+  "brand": "Puma",
+  "road": "M1",
+  "lat": -13.99187,
+  "lon": 33.77997,
+  "aliases": [
+   "Puma"
+  ],
+  "osm": [
+   "n3089037237"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-m12",
+  "name": "Puma · M12",
+  "brand": "Puma",
+  "road": "M12",
+  "lat": -13.99496,
+  "lon": 33.67558,
+  "aliases": [
+   "Puma"
+  ],
+  "osm": [
+   "n902447622"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-mphonongo",
+  "name": "Puma · Mphonongo",
+  "brand": "Puma",
+  "road": "Mphonongo",
+  "lat": -13.93979,
+  "lon": 33.79086,
+  "aliases": [
+   "Puma"
+  ],
+  "osm": [
+   "n12460741037"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "puma-mzimba-street",
+  "name": "Puma · Mzimba Street",
+  "brand": "Puma",
+  "road": "Mzimba Street",
+  "lat": -13.98239,
+  "lon": 33.78554,
+  "aliases": [
+   "Puma"
+  ],
+  "osm": [
+   "n5416199319"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-13-95533-769",
+  "name": "TotalEnergies Bwandiro",
+  "brand": "TotalEnergies",
+  "road": null,
+  "lat": -13.95512,
+  "lon": 33.76899,
+  "aliases": [
+   "Bwandiro Total"
+  ],
+  "osm": [],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-paul-kagame-road",
+  "name": "TotalEnergies Costantini",
+  "brand": "TotalEnergies",
+  "road": "Paul Kagame Road",
+  "lat": -13.98386,
+  "lon": 33.76619,
+  "aliases": [
+   "Costantini Total Filling Station"
+  ],
+  "osm": [
+   "w242798620",
+   "n1731879092"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-murray-road",
+  "name": "TotalEnergies Murray Road",
+  "brand": "TotalEnergies",
+  "road": "Murray Road",
+  "lat": -13.98458,
+  "lon": 33.77096,
+  "aliases": [
+   "Murray Road TOTAL",
+   "TOTAL Murray Road"
+  ],
+  "osm": [
+   "n5876367585",
+   "n5890564185"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-kenyatta-road",
+  "name": "TotalEnergies Mantino",
+  "brand": "TotalEnergies",
+  "road": "Kenyatta Road",
+  "lat": -13.96506,
+  "lon": 33.78576,
+  "aliases": [
+   "TOTAL  MANTINO"
+  ],
+  "osm": [
+   "n1730335978"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-umodzi-road",
+  "name": "TotalEnergies Area 12",
+  "brand": "TotalEnergies",
+  "road": "Umodzi Road",
+  "lat": -13.95511,
+  "lon": 33.80978,
+  "aliases": [
+   "Total Area 12"
+  ],
+  "osm": [
+   "n3068404941"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-m1",
+  "name": "TotalEnergies Kanengo (Area 30)",
+  "brand": "TotalEnergies",
+  "road": "M1",
+  "lat": -13.91609,
+  "lon": 33.78755,
+  "aliases": [
+   "Total Kanengo A30"
+  ],
+  "osm": [
+   "w242718329",
+   "n2501724355"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-acacia-close",
+  "name": "TotalEnergies · Acacia Close",
+  "brand": "TotalEnergies",
+  "road": "Acacia Close",
+  "lat": -13.9607,
+  "lon": 33.7893,
+  "aliases": [
+   "Total"
+  ],
+  "osm": [
+   "n1731979481"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-chidzanja-road",
+  "name": "TotalEnergies · Chidzanja Road",
+  "brand": "TotalEnergies",
+  "road": "Chidzanja Road",
+  "lat": -14.01161,
+  "lon": 33.78718,
+  "aliases": [
+   "Total Fuelstation 04"
+  ],
+  "osm": [
+   "n902447615",
+   "w442848037"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-colby-road",
+  "name": "TotalEnergies · Colby Road",
+  "brand": "TotalEnergies",
+  "road": "Colby Road",
+  "lat": -13.98779,
+  "lon": 33.76591,
+  "aliases": [
+   "Total"
+  ],
+  "osm": [
+   "n3105493864"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-kamuzu-procession-road",
+  "name": "TotalEnergies · Kamuzu Procession Road",
+  "brand": "TotalEnergies",
+  "road": "Kamuzu Procession Road",
+  "lat": -13.9758,
+  "lon": 33.75849,
+  "aliases": [
+   "TOTAL fuelstation 03",
+   "Total"
+  ],
+  "osm": [
+   "n902447617",
+   "w908076685"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-kamuzu-procession-road-2",
+  "name": "TotalEnergies · Kamuzu Procession Road",
+  "brand": "TotalEnergies",
+  "road": "Kamuzu Procession Road",
+  "lat": -13.98444,
+  "lon": 33.76656,
+  "aliases": [
+   "Total"
+  ],
+  "osm": [
+   "n1731879094"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-masuku-road",
+  "name": "TotalEnergies · Masuku Road",
+  "brand": "TotalEnergies",
+  "road": "Masuku Road",
+  "lat": -13.9582,
+  "lon": 33.79473,
+  "aliases": [
+   "Total"
+  ],
+  "osm": [
+   "n3008998254"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-mbawala-close",
+  "name": "TotalEnergies · Mbawala Close",
+  "brand": "TotalEnergies",
+  "road": "Mbawala Close",
+  "lat": -13.97194,
+  "lon": 33.74064,
+  "aliases": [
+   "Total"
+  ],
+  "osm": [
+   "n4463547389"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-s125",
+  "name": "TotalEnergies · S125",
+  "brand": "TotalEnergies",
+  "road": "S125",
+  "lat": -14.0621,
+  "lon": 33.79934,
+  "aliases": [
+   "Total"
+  ],
+  "osm": [
+   "w840974794",
+   "n5352076921"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "totalenergies-ufulu",
+  "name": "TotalEnergies · Ufulu",
+  "brand": "TotalEnergies",
+  "road": "Ufulu",
+  "lat": -13.92655,
+  "lon": 33.78951,
+  "aliases": [
+   "Total Filling Station"
+  ],
+  "osm": [
+   "n1729212341"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "station-13-98633-771",
+  "name": "Filling station",
+  "brand": null,
+  "road": null,
+  "lat": -13.98634,
+  "lon": 33.77112,
+  "aliases": [],
+  "osm": [],
+  "added": "osm"
+ },
+ {
+  "id": "station-13-84733-840",
+  "name": "Filling station",
+  "brand": null,
+  "road": null,
+  "lat": -13.84667,
+  "lon": 33.83952,
+  "aliases": [],
+  "osm": [],
+  "added": "osm"
+ },
+ {
+  "id": "station-s123",
+  "name": "Filling station · S123",
+  "brand": null,
+  "road": "S123",
+  "lat": -13.89794,
+  "lon": 33.7647,
+  "aliases": [],
+  "osm": [
+   "w815461961"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "station-tsambango-road",
+  "name": "Filling station · Tsambango Road",
+  "brand": null,
+  "road": "Tsambango Road",
+  "lat": -14.00399,
+  "lon": 33.81575,
+  "aliases": [],
+  "osm": [
+   "n3060525959"
+  ],
+  "added": "osm"
+ },
+ {
+  "id": "station-kamuzu-procession-road",
+  "name": "Mbowe",
+  "brand": null,
+  "road": "Kamuzu Procession Road",
+  "lat": -13.97186,
+  "lon": 33.75681,
+  "aliases": [
+   "Mbowe"
+  ],
+  "osm": [
+   "n1783147526"
+  ],
+  "added": "osm"
+ }
+]

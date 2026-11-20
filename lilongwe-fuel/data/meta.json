@@ -1,0 +1,50 @@
+{
+ "lastCheck": "2026-11-20T14:50:00+02:00",
+ "lastResult": {
+  "ko": "MERA 홈페이지와 현지 뉴스 5곳의 기사 33건을 확인했습니다. 릴롱궤 주유소별 배송 정보는 없습니다.",
+  "en": "Checked the MERA website and 33 articles from 5 local news sites. No station-level delivery info for Lilongwe."
+ },
+ "mera_fb": "https://www.facebook.com/MERAMalawi",
+ "seen": [
+  "https://malawi24.com/2026/11/17/another-promise-govt-leaves-malawians-hoping-again/",
+  "https://malawi24.com/2026/11/17/cama-backs-private-diesel-imports/",
+  "https://malawi24.com/2026/11/18/egenco-promised-malawians-31mw-then-moved-to-pay-lawyers-k2-6bn-three-days-later/",
+  "https://malawi24.com/2026/11/19/calls-for-mutharikas-address-mount/",
+  "https://malawi24.com/2026/11/19/fuel-crisis-leaves-mzuni-students-hitching-rides/",
+  "https://malawi24.com/2026/11/19/mangochi-seeks-help-to-rebuild-damaged-health-centre/",
+  "https://mwnation.com/agro-firm-decries-policy-inconsistencies-forex-scarcity/",
+  "https://mwnation.com/dodma-secures-third-of-maize-for-el-nino-response/",
+  "https://mwnation.com/economists-outline-measures-to-reduce-rising-inflation-rate/",
+  "https://mwnation.com/low-deficit-puts-austerity-gains-to-test/",
+  "https://mwnation.com/malawi-first-gives-govt-last-warning/",
+  "https://mwnation.com/malawians-deserve-better-on-fuel-delivery-logistics/",
+  "https://mwnation.com/mera-liberalises-diesel-imports-earns-applause/",
+  "https://mwnation.com/opc-warned-ban-could-trigger-breach-of-contracts/",
+  "https://times.mw/a-government-running-against-the-clock-why-malawi-cannot-afford-a-two-year-wait/",
+  "https://times.mw/after-gold-what-next-malawis-deeper-crisis-of-economic-survival/",
+  "https://times.mw/malawi-turns-to-gold-sales-to-address-fuel-crisis/",
+  "https://times.mw/malawi-where-a-full-fuel-tank-is-an-achievement/",
+  "https://times.mw/mera-moves-to-contain-fuel-supply-pressure/",
+  "https://times.mw/michael-usi-offers-to-help-end-fuel-scarcity/",
+  "https://times.mw/smes-lament-fuel-shortages/",
+  "https://www.malawivoice.com/2026/11/17/cama-hails-mera-for-opening-up-diesel-importation/",
+  "https://www.malawivoice.com/2026/11/18/minister-tembo-launches-fdh-gold-trading-centres-to-strengthen-formal-gold-trade/",
+  "https://www.malawivoice.com/2026/11/19/dpp-wants-mcp-deregistered/",
+  "https://www.malawivoice.com/2026/11/19/meet-professor-paul-aaron-gadama-an-economist-financial-analyst/",
+  "https://www.malawivoice.com/2026/11/20/blantyre-synod-asks-mutharika-to-clean-up-inner-circle/",
+  "https://www.nyasatimes.com/ag-swoops-on-scandal-hit-egenco-as-k2-6bn-legal-fees-storm-deepens/",
+  "https://www.nyasatimes.com/ccap-cleric-blasts-presidents-inner-circle-theyre-robbing-malawi/",
+  "https://www.nyasatimes.com/dpps-mchacha-wants-mcp-removed-from-political-register/",
+  "https://www.nyasatimes.com/fuel-crisis-has-no-end-date-namalomba-admits/",
+  "https://www.nyasatimes.com/kapito-slams-govt-austerity-call-as-insult-and-demands-cabinet-cut-to-15/",
+  "https://www.nyasatimes.com/malawi-first-issues-final-warning-as-kalindo-vows-nationwide-demos/",
+  "https://www.nyasatimes.com/meras-fuel-waiver-opens-new-front-in-malawis-economic-crisis/"
+ ],
+ "runLog": [
+  {
+   "at": "2026-11-20T14:50:00+02:00",
+   "by": "setup",
+   "summary": "Initial setup run; 33 posts read, no station-level info."
+  }
+ ]
+}
