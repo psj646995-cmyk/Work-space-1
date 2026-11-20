@@ -1,8 +1,8 @@
 {
- "lastCheck": "2026-11-20T14:50:00+02:00",
+ "lastCheck": "2026-11-20T15:15:00+02:00",
  "lastResult": {
-  "ko": "MERA 홈페이지와 현지 뉴스 5곳의 기사 33건을 확인했습니다. 릴롱궤 주유소별 배송 정보는 없습니다.",
-  "en": "Checked the MERA website and 33 articles from 5 local news sites. No station-level delivery info for Lilongwe."
+  "ko": "MERA 홈페이지와 현지 뉴스 사이트의 새 기사 1건, 웹 검색 결과를 확인했습니다. 릴롱궤 주유소별 배송 정보는 없습니다.",
+  "en": "Checked the MERA website, 1 new local news article and a web search. No station-level delivery info for Lilongwe."
  },
  "mera_fb": "https://www.facebook.com/MERAMalawi",
  "seen": [
@@ -38,13 +38,19 @@
   "https://www.nyasatimes.com/fuel-crisis-has-no-end-date-namalomba-admits/",
   "https://www.nyasatimes.com/kapito-slams-govt-austerity-call-as-insult-and-demands-cabinet-cut-to-15/",
   "https://www.nyasatimes.com/malawi-first-issues-final-warning-as-kalindo-vows-nationwide-demos/",
-  "https://www.nyasatimes.com/meras-fuel-waiver-opens-new-front-in-malawis-economic-crisis/"
+  "https://www.nyasatimes.com/meras-fuel-waiver-opens-new-front-in-malawis-economic-crisis/",
+  "https://www.malawivoice.com/2026/11/20/economic-think-tank-gadama-says-malawi-needs-strategic-approach-to-solve-economic-challenges/"
  ],
  "runLog": [
   {
    "at": "2026-11-20T14:50:00+02:00",
    "by": "setup",
    "summary": "Initial setup run; 33 posts read, no station-level info."
+  },
+  {
+   "at": "2026-11-20T15:15:00+02:00",
+   "by": "scheduled",
+   "summary": "1 new post + web search; no station-level info, no change."
   }
  ]
 }
