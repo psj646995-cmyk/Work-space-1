@@ -44,7 +44,9 @@ send a screenshot of a MERA Facebook post. Follow "Screenshot update" below for 
      (`{"at", "by": "scheduled", "summary"}`), keeping the last 60.
 5. `python3 lilongwe-fuel/tools/build_data.py`. It must print `ok`. If it doesn't, fix the data.
 6. Publish only the data file to the existing artifact: Artifact publish with
-   `url` = the artifact URL, `files: {"data.json": "lilongwe-fuel/site/data.json"}` and no page changes.
+   `url` = the artifact URL, `file_path` = absolute path of `lilongwe-fuel/site/index.html`, and
+   `files: {"data.json": "<ABSOLUTE path of lilongwe-fuel/site/data.json>"}`. Relative paths are resolved
+   from the working directory and can fail. Don't change the page itself during a scheduled run.
    If you were refused because you hadn't read it, you already read it in step 2. Retry once.
    Also publish when nothing changed, so `lastCheck` moves and readers can see the check ran.
 7. Improve the automation when you learn something. Examples: a source moved, a new site that republishes MERA
